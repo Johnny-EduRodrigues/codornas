@@ -39,20 +39,38 @@ color_category: cor ou padrão de preenchimento ou imagem de fundo a ser utiliza
 10
 active
 reserva ativa ou não? reservas ativas são válidas, reservas não ativas foram canceladas/excluídas. Quando uma reserva é alterada, a antiga é cancelada e uma nova é criada. Isso não precisa ser implementado agora (deixar para uma sprint 3)
-11
-batch_id
-ID de operação em lote. Quando uma reserva é feita “em massa”, por exemplo, de uma data até outra, são criadas várias reservas que possuem o mesmo “batch_id”. Isso serve para, quando alterarmos uma reserva, o sistema perguntar se deseja alterar só aquela reserva ou todas as reservas com o mesmo “batch_id”. Se a reserva não foi feita “em massa”, esse campo não será preenchido (valerá NULL). Possivelmente será um valor do tipo UID ou HASH.
-12
-obs
-qualquer tipo de observação adicional sobre a reserva (campo STRING)
-13
-created_at
-data e hora (timestamp) de criação da reserva, obtida automaticamente do sistema.
-14
-canceler_user
-Usuário que cancelou a reserva. Quando houver valor neste campo (diferente de NULL), essa reserva deve estar com o campo active igual a false. Nesse momento pode ser STRING, futuramente será chave estrangeira.
-15
-observers
-lista de usuários que têm interesse em serem notificados, caso essa reserva fique inativa (alterada ou excluída). Nesse momento, pode ser uma STRING com uma lista de IDs separados por vírgula, futuramente será uma lista reversa.
 
+batch_id: ID de operação em lote. Quando uma reserva é feita “em massa”, por exemplo, de uma data até outra, são criadas várias reservas que possuem o mesmo “batch_id”. Isso serve para, quando alterarmos uma reserva, o sistema perguntar se deseja alterar só aquela reserva ou todas as reservas com o mesmo “batch_id”. Se a reserva não foi feita “em massa”, esse campo não será preenchido (valerá NULL). Possivelmente será um valor do tipo UID ou HASH.
 
+obs: qualquer tipo de observação adicional sobre a reserva (campo STRING)
+
+created_at: data e hora (timestamp) de criação da reserva, obtida automaticamente do sistema.
+
+canceler_user: Usuário que cancelou a reserva. Quando houver valor neste campo (diferente de NULL), essa reserva deve estar com o campo active igual a false. Nesse momento pode ser STRING, futuramente será chave estrangeira.
+
+observers: lista de usuários que têm interesse em serem notificados, caso essa reserva fique inativa (alterada ou excluída). Nesse momento, pode ser uma STRING com uma lista de IDs separados por vírgula, futuramente será uma lista reversa.
+
+Proposta mínima para relacionamento entre possíveis classes:
+
+@startuml
+
+class Reservation {
+    id : snowflake_id
+    artefact_id: int
+}
+
+class Artefact {
+    id : int
+    name : str
+    category_id : int
+}
+
+class Category {
+    id : int
+    name : str
+}
+
+Reservation -- Artefact
+Artefact -- Category
+
+@enduml
