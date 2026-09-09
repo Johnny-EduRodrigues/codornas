@@ -12,3 +12,12 @@ Arquitetura do sistema:
 - servico
 - rotas
 usar node.js com prisma para manter um conjunto único de tecnologias
+
+possível arquitetura:
+Node.js
++ JavaScript
++ Express
++ Prisma
++ PostgreSQL
++ JWT
++ Google OAuth
