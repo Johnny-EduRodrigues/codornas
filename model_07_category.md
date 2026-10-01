@@ -25,3 +25,5 @@ Mobília
 - List[Artifact]
 
 5) tenant_id
+
+6) created_at
