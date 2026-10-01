@@ -1,1 +1,0 @@
-As classes descritas nos arquivos model estão considerando características de classe implementadas em SQLAlchemy (por exemplo, lista reversa)
