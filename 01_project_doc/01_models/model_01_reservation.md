@@ -1,5 +1,3 @@
-Descrição da classe SQLAlchemy Reservation
-
 1) id
 - identificador único da reserva
 - pode ser autoincremento, UID, ULID, UUID v7, etc

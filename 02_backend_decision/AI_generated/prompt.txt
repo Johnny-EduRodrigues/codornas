@@ -1,0 +1,11 @@
+I want to compare backend using flask and fastapi. 
+Please create a backend with CRUD operations 
+of the three models inside the 02_backend_decision folder. 
+Classes should be consider SQLAlchemy, 
+with a SQLite database. 
+On each backend should exist at least the folders: 
+model, service and route. 
+Use uv as package manager. 
+
+COMPLEMENT
+Please add to the backends a migration capability at the database components

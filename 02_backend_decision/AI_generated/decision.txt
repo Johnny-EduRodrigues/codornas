@@ -1,0 +1,6 @@
+Na verdade vamos decidir por flask
+porque no 3o ano é ensinado flask.
+Isso porque conseguimos fazer um sistema
+web inteiro usando apenas python com flask.
+Depois a migração de flask "inteiro" (front+back)
+para flask apenas API é mais suave.
