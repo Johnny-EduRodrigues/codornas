@@ -11,4 +11,5 @@ Arquitetura do sistema
 - modelo: classes usando ORM (object relational mapping)
 - servico
 - rotas
-- tecnologia: python com flask ou fastapi?
+- tecnologia: python com flask
+- usar desde o começo: sqlalchemy, JWT, migration
