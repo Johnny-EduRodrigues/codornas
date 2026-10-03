@@ -21,3 +21,8 @@ Laboratório A04
 6) tenant_id
 
 7) tenant
+
+8) restrict
+- artefatos restritos não podem ser reservados por usuários comuns, apenas admins
+- tipo: Boolean
+- valor padrão: Falso

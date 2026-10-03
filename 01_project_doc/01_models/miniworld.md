@@ -1,0 +1,1 @@
+Qualquer pessoa pode reservar qualquer artefato, exceto se o artefato for restrito.
