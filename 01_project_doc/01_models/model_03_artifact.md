@@ -14,15 +14,18 @@ Laboratório A04
 
 4) created_at
 
-5) admins
-- lista reversa de usuários que podem administrar reservas deste artefato
-- List[User]
+5) tenant_id
 
-6) tenant_id
+6) tenant
 
-7) tenant
-
-8) restrict
+7) restrict
 - artefatos restritos não podem ser reservados por usuários comuns, apenas admins
 - tipo: Boolean
 - valor padrão: Falso
+
+8) admins
+- lista reversa de usuários que podem administrar reservas deste artefato
+- List[User]
+
+
+

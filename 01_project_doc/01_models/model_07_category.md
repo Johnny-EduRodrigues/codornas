@@ -12,18 +12,12 @@ Laboratório de Informática
 Utensílio elétrico
 Mobília
 
-3) color
-- cor associada à categoria
-- é um código de cor  
-- armazenado em hexadecimal
-- essa cor será representada em uma página HTML
+3) tenant_id
 
-4) artifacts
+4) created_at
+
+5) artifacts
 - lista reversa de Artifact
 - contém os artefatos que estão associados a esta categoria
 - um artefato está vinculado a uma ou mais categorias
 - List[Artifact]
-
-5) tenant_id
-
-6) created_at

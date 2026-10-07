@@ -55,42 +55,39 @@
 - se a reserva não foi feita "em massa"/"em lote", esse campo não será preenchido (valerá NULL)
 - tipo UUID ou algo assim
 
-13) obs
+13) end_date
+- no caso de uma reserva em lote, essa data marca o fim do período do lote
+- tipo Data
+
+14) obs
 - una observação qualquer sobre a reserva
 - tipo Text
 
-14) created_at
+15) created_at
 - data de criação da reserva
 - tipo: data/hora (timestamp)
 - obtida automaticamente do sistema
 
-15) canceler_user_id
+16) canceler_user_id
 - chave estrangeira do usuário que cancelou a reserva
 - referente ao id da classe User
 - quando houver valor neste campo (diferente de NULL), essa reserva deve estar com o campo active igual a false, pois foi cancelada. 
 
-16) canceler_user
+17) canceler_user
 - objeto da classe User, montado a partir de canceler_user_id
 - usuário que cancelou a reserva
 
-17) canceler_annotation
+18) canceler_annotation
 - observação/justificativa sobre o porquê da reserva ter sido cancelado
 - tipo Text
 - campo de prenchimento obrigatório
 
-18) observers
-- lista reversa de usuários que estão interessados caso essa reserva fique inativa (seja ALTERADA ou CANCELADA)
-- a alteração de uma reserva implica no cancelamento da reserva e na criação de uma nova reserva alterada
-
-19) tenant_id
-- chave estrangeira do tenant
-- tipo Inteiro
-
-20) tenant
-- objeto da classe Tenant, montado a partir do tenant_id
-
-21) group_id
+19) group_id
 - chave estrangeira do grupo ao qual pertence essa reserva
 
-22) group
+20) group
 - objeto da classe Group, montado a partir de group_id
+
+21) observers
+- lista reversa de usuários que estão interessados caso essa reserva fique inativa (seja ALTERADA ou CANCELADA)
+- a alteração de uma reserva implica no cancelamento da reserva e na criação de uma nova reserva alterada

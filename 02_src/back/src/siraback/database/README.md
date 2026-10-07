@@ -1,0 +1,1 @@
+When SQLite is used, the database goes in this folder.
