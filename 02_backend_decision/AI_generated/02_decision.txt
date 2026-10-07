@@ -1,9 +1,0 @@
-Vamos decidir por flask
-porque no 3o ano é ensinado flask.
-
-Conseguimos fazer um sistema
-web inteiro usando apenas python com flask,
-usando jinja e templates.
-
-Depois a migração de flask "inteiro" (front+back)
-para flask apenas API é mais suave.
