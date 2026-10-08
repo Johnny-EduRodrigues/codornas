@@ -25,10 +25,12 @@ Uma reserva possui:
 - o usuário que cancelou a reserva, caso ela não esteja ativa;
 - uma anotação sobre o motivo do cancelamento da reserva, caso ela não esteja ativa;
 - o identificador da versão anterior da reserva, em caso de alteração de reserva;
-- DERIVADO: uma lista de grupos aos quais a reserva pertence; por exemplo, uma reserva de uma sala de aula para uma disciplina pode pertencer ao grupo "Ciência da Computação"; uma reserva para uma palestra sobre "Como empreender" pode pertencer ao grupo "Discentes do curso superior" e "Docentes do curso superior"
+- um grupo que agrupa reservas de alguma maneira; por exemplo, uma reserva de uma sala de aula para uma disciplina pode pertencer ao grupo "Ciência da Computação"; uma reserva para uma palestra sobre "Como empreender" pode pertencer ao grupo "Interesse geral". A reserva pode, entretanto, não pertencer a nenhum grupo
 - DERIVADO: uma lista de observadores, que desejam receber notificação caso a reserva seja cancelada ou alterada
 
 RN: duas reservas ativas não podem ser realizadas com interseções; ou seja, cada reserva ativa ocupa um dia e faixa de horário único e exclusivo, para um artefato.
+
+RN: o horário inicial de uma reserva deve ser sempre menor que o horário final da reserva
 
 RN: uma reserva está concluída quando a data da reserva se torna "passada"; porém, não há diferença (restrições) na manipulação de reservas passadas, em execução ou futuras.
 
@@ -37,8 +39,6 @@ RN: como todos os dados da reserva são públicos, não é recomendado registrar
 RN: a alteração de uma reserva em lote é feita de forma individual, ou da reserva atual "para frente".
 
 RN: a alteração de uma reserva pode ser feita pela pessoa que fez a reserva, por um administrador do artefato envolvido na reserva ou por um superadmin.
-
-RN: uma reserva pode pertencer a nenhum grupo, ou a um ou mais grupos
 
 RN: quando uma reserva é alterada, o identificador da versão anterior da reserva fica registrado em um campo específico na reserva nova. Isso é importante para manter o histórico de alterações da reserva.
 
@@ -54,6 +54,8 @@ Um usuário possui:
 - DERIVADO: uma lista reversa de artefatos os quais o usuário pode administrar
 - DERIVADO: uma lista reversa de reservas que o usuário está observando, para ser notificado em caso de cancelamento ou alteração
 
+RN: o email é um atributo de valor único no sistema
+
 RN: normalmente, um usuário de uma organização não pode reservar artefatos de outra organização. Entretanto, um usuário pode ser alterado para outra organização, para ter acesso aos recursos. Essa alteração é feita por um superadministrador.
 
 RN: o superadministrador tem acesso ao sistema de forma completa (como um root), à todas as organizações.
@@ -64,8 +66,10 @@ Um artefato possui:
 - pertence a uma ou mais categorias (exemplo: Sala de Aula, Sala de aula do piso superior, Laboratório de Informática)
 - uma data de registro no sistema
 - a organização à qual pertence o artefato
-- o indicador (flag: verdadeiro ou falso) que diz se o artefato é restrito ou não
+- um indicador (flag: verdadeiro ou falso) que diz se o artefato é restrito ou não
 - DERIVADO: uma lista reversa dos usuários específicos que podem administrar esse artefato
+
+RN: um artefato restrito somente pode ser reservado por um administrador daquele artefato, ou por um superadmin.
 
 Um propósito possui:
 - um identificador único
@@ -104,3 +108,9 @@ Um grupo de usuários permitido (GUP) possui:
 RN: o auto-cadastramento é permitido apenas para usuários que estejam cadastrado no GUP.
 
 RN: quem cadastra usuários no GUP é o superadmin
+
+RN: filtro de domínio são tratados com exatidão; subdomínios não são considerados. Por exemplo, se o filtro é "ifc.edu.br", aceita-se "jorge@ifc.edu.br", mas não "joao@blumenau.ifc.edu.br" ou "maria@sisae.ifc.edu.br"
+
+RN: ao se cadastrar, o novo usuário escolhe a organização à qual pertence, caso mais de uma organização aceite o usuário. Caso erre a escolha, será necessário um superadmin para fazer a alteração de vínculo de organização.
+
+RN: todo usuário pertence a uma organização.

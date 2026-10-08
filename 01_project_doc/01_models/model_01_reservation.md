@@ -51,7 +51,7 @@
 - código que identifica reserva como "em lote"
 - Quando uma reserva é feita "em massa", por exemplo, de uma data até outra, são criadas várias reservas que possuem o mesmo "batch_id"
 - se uma reserva for alterada ou cancelada e possuir valor em batch_id, todas as outras que possuem esse valor de batch_id poderão ser alteradas ou canceladas "em lote" (de uma só vez), isso será perguntado ao usuário (se ele deseja fazer a operação "em lote" ou individual)
-- se apenas essa reserva for alterada, o batch_id dela será "zerado" (valor ficará NULL), pois ela não pertencerá mais ao grupo
+- se apenas essa reserva for alterada, o batch_id dela será "zerado" (valor ficará NULL), pois ela não pertencerá mais ao lote
 - se a reserva não foi feita "em massa"/"em lote", esse campo não será preenchido (valerá NULL)
 - tipo UUID ou algo assim
 
@@ -82,13 +82,16 @@
 - tipo Text
 - campo de prenchimento obrigatório
 
-19) groups
-- lista reversa de objetos da classe Group; uma reserva por pertencer a nenhum ou vários grupos
+19) group_id
+- grupo ao qual a reserva pertence; por exemplo, uma reserva de uma disciplina pode pertencer ao grupo "Ciência da Computação"
 
-20) previous_reservation_id
+20) group
+  objeto Grupo montado a partir de group_id
+
+21) previous_reservation_id
 - quando uma reserva for alterada, esse campo armazena o ID da reserva que foi desativada e que possuía os valores anteriores à reserva atual ativa
 - esse campo pode ter valor também para reservas canceladas, pois pode ter havido versões anteriores da reserva
 
-21) observers
+22) observers
 - lista reversa de usuários que estão interessados caso essa reserva fique inativa (seja ALTERADA ou CANCELADA)
 - a alteração de uma reserva implica no cancelamento da reserva e na criação de uma nova reserva alterada
