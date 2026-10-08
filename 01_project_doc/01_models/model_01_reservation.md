@@ -82,11 +82,12 @@
 - tipo Text
 - campo de prenchimento obrigatório
 
-19) group_id
-- chave estrangeira do grupo ao qual pertence essa reserva
+19) groups
+- lista reversa de objetos da classe Group; uma reserva por pertencer a nenhum ou vários grupos
 
-20) group
-- objeto da classe Group, montado a partir de group_id
+20) previous_reservation_id
+- quando uma reserva for alterada, esse campo armazena o ID da reserva que foi desativada e que possuía os valores anteriores à reserva atual ativa
+- esse campo pode ter valor também para reservas canceladas, pois pode ter havido versões anteriores da reserva
 
 21) observers
 - lista reversa de usuários que estão interessados caso essa reserva fique inativa (seja ALTERADA ou CANCELADA)

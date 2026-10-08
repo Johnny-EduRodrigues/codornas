@@ -18,14 +18,29 @@ Uma reserva possui:
 - a hora de início e hora de fim da reserva;
 - o propósito da reserva (uma breve descrição);
 - se a reserva está ativa ou não;
-- um código de agrupamento de reservas (batch_id), que diz se aquela reserva é individual ou é uma reserva que foi feita "em lote";
+- um código de agrupamento de reservas (batch_id), que diz se aquela reserva é individual ou é uma reserva que foi feita "em lote"; RN: reservas em lote são criadas simultaneamente e individualmente;
 - uma data final, que indica que aquela é uma reserva "em lote";
 - uma observação, para registrar qualquer informação extra;
 - a data de criação da reserva;
 - o usuário que cancelou a reserva, caso ela não esteja ativa;
 - uma anotação sobre o motivo do cancelamento da reserva, caso ela não esteja ativa;
-- um grupo ao qual a reserva pertence (por exemplo, a reserva é relativa a uma aula do curso de "Ciência da Computação" <== esse seria o grupo: "Ciência da Computação")
+- o identificador da versão anterior da reserva, em caso de alteração de reserva;
+- DERIVADO: uma lista de grupos aos quais a reserva pertence; por exemplo, uma reserva de uma sala de aula para uma disciplina pode pertencer ao grupo "Ciência da Computação"; uma reserva para uma palestra sobre "Como empreender" pode pertencer ao grupo "Discentes do curso superior" e "Docentes do curso superior"
 - DERIVADO: uma lista de observadores, que desejam receber notificação caso a reserva seja cancelada ou alterada
+
+RN: duas reservas ativas não podem ser realizadas com interseções; ou seja, cada reserva ativa ocupa um dia e faixa de horário único e exclusivo, para um artefato.
+
+RN: uma reserva está concluída quando a data da reserva se torna "passada"; porém, não há diferença (restrições) na manipulação de reservas passadas, em execução ou futuras.
+
+RN: como todos os dados da reserva são públicos, não é recomendado registrar dados sensíveis na reserva.
+
+RN: a alteração de uma reserva em lote é feita de forma individual, ou da reserva atual "para frente".
+
+RN: a alteração de uma reserva pode ser feita pela pessoa que fez a reserva, por um administrador do artefato envolvido na reserva ou por um superadmin.
+
+RN: uma reserva pode pertencer a nenhum grupo, ou a um ou mais grupos
+
+RN: quando uma reserva é alterada, o identificador da versão anterior da reserva fica registrado em um campo específico na reserva nova. Isso é importante para manter o histórico de alterações da reserva.
 
 Um usuário possui:
 - um identificador único
@@ -39,6 +54,10 @@ Um usuário possui:
 - DERIVADO: uma lista reversa de artefatos os quais o usuário pode administrar
 - DERIVADO: uma lista reversa de reservas que o usuário está observando, para ser notificado em caso de cancelamento ou alteração
 
+RN: normalmente, um usuário de uma organização não pode reservar artefatos de outra organização. Entretanto, um usuário pode ser alterado para outra organização, para ter acesso aos recursos. Essa alteração é feita por um superadministrador.
+
+RN: o superadministrador tem acesso ao sistema de forma completa (como um root), à todas as organizações.
+
 Um artefato possui:
 - um identificador único
 - um nome
@@ -46,13 +65,14 @@ Um artefato possui:
 - uma data de registro no sistema
 - a organização à qual pertence o artefato
 - o indicador (flag: verdadeiro ou falso) que diz se o artefato é restrito ou não
-- DERIVADO: uma lista reversa com os usuários que podem administrar esse artefato
+- DERIVADO: uma lista reversa dos usuários específicos que podem administrar esse artefato
 
 Um propósito possui:
 - um identificador único
 - uma descrição (exemplo: "Aula de Matemática 102 info / Alexandre", "Prática de Esportes: futsal, vôlei, tênis de mesa", "II Workshop das Mulheres na Ciência")
 - uma data de registro no sistema
 - a organização à qual pertence o propósito
+- RN (regra de negócio): o propósito foi separado para reduzir a repetição de descrições similares, no caso de alocação de um laboratório para aula, por exemplo. Para o caso de um propósito específico, esse propósito específico será criado como um novo propósito, e será cadastrado. O campo observação da reserva sempre poderá ser usado para informações complementares.
 
 Uma organização possui:
 - um identificador único
@@ -72,10 +92,15 @@ Um grupo possui:
 Uma categoria possui:
 - um identificador único
 - um nome; exemplos: Sala de Aula, Sala de Aula do piso superior, Laboratório de Informática
-- a organização à qual pertence esse grupo
+- a organização à qual pertence essa categoria
 - DERIVADO: uma lista reversa de artefatos relacionados ao artefato
 
-Um grupo de usuários permitido possui:
+Um grupo de usuários permitido (GUP) possui:
 - um identificador único
 - uma descrição; exemplo: "Servidores do IFC"
 - um filtro; por exemplos: "ifc.edu.br", "hvescovi@gmail.com"
+- a organização à qual pertence esse grupo de usuários
+
+RN: o auto-cadastramento é permitido apenas para usuários que estejam cadastrado no GUP.
+
+RN: quem cadastra usuários no GUP é o superadmin

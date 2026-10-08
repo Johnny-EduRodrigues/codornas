@@ -5,3 +5,7 @@
 
 3) filter_or_email_allowed
 - filtro do email permitido. Se contiver o caracter "@", será um email específico; caso não contenha, será um domínio permitido
+
+4) tenant_id
+
+5) tenant
