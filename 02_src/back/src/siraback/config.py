@@ -51,7 +51,7 @@ else:
     # pega o caminho no qual está este arquivo
     caminho = os.path.dirname(os.path.abspath(__file__))
     # define um arquivo na pasta 'database'
-    arquivobd = os.path.join(caminho, 'database', 'pessoas.db')
+    arquivobd = os.path.join(caminho, 'database', 'reservation.db')
     # configura o BD do SQLAlchemy
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + arquivobd
 

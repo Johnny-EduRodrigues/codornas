@@ -15,7 +15,7 @@ setting `PYTHONPATH`:
 
 ```bash
 uv run --project . --directory src flask --app siraback.config:app db init
-uv run --project . --directory src flask --app siraback.config:app db migrate -m "create tenant table"
+uv run --project . --directory src flask --app siraback.config:app db migrate -m "001 main database tables"
 uv run --project . --directory src flask --app siraback.config:app db upgrade
 ```
 
@@ -25,6 +25,19 @@ models imported when the Flask app loads. For example, import
 `siraback.models.tenant` in `src/siraback/config.py` after `db` is initialized
 so it can detect the `Tenant` model.
 
+Example workflow when adding a new model Category:
+
+```bash
+# add or edit a model in src/siraback/models/
+# make sure it is imported in src/siraback/config.py
+uv run --project . --directory src flask --app siraback.config:app db migrate -m "002 adding the Category model/table and relationships"
+uv run --project . --directory src flask --app siraback.config:app db upgrade
+```
+
+This creates a new revision script under `src/migrations/versions/` that
+contains the SQL needed for the schema change. Review the generated migration
+before upgrading if you need to adjust anything manually.
+
 ## Run the app
 
 ```bash
@@ -32,6 +45,6 @@ uv run --project . --directory src flask --app siraback.config:app run --debug
 ```
 
 By default, the app uses SQLite and stores the database at
-`src/siraback/database/pessoas.db`. To use PostgreSQL, set
+`src/siraback/database/reservation.db`. To use PostgreSQL, set
 `POSTGRES_URL_NON_POOLING` to the database connection URL before running the
 migrations or app.
