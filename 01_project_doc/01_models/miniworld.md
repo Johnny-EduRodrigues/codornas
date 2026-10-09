@@ -10,13 +10,14 @@ Qualquer usuário do sistema pode efetuar reservas, a não ser que o artefato se
 
 # Descrição das entidades
 
-Uma reserva possui: 
+## Uma reserva possui: 
+
 - um identificador único; 
-- um usuário que fez a reserva; 
+- um usuário que fez a reserva ("autor" da reserva); 
 - o artefato que foi reservado; 
 - a data para a qual o artefato está reservado;
 - a hora de início e hora de fim da reserva;
-- o propósito da reserva (uma breve descrição);
+- o propósito da reserva (uma breve descrição); na verdade, será uma chave estrangeira para uma tabela de propósitos
 - se a reserva está ativa ou não;
 - um código de agrupamento de reservas (batch_id), que diz se aquela reserva é individual ou é uma reserva que foi feita "em lote"; 
 - uma observação, para registrar qualquer informação extra;
@@ -25,17 +26,22 @@ Uma reserva possui:
 - uma anotação sobre o motivo do cancelamento da reserva, caso ela não esteja ativa;
 - o identificador da versão anterior da reserva, em caso de alteração de reserva;
 - um grupo que agrupa reservas de alguma maneira; por exemplo, uma reserva de uma sala de aula para uma disciplina pode pertencer ao grupo "Ciência da Computação"; uma reserva para uma palestra sobre "Como empreender" pode pertencer ao grupo "Interesse geral". A reserva pode, entretanto, não pertencer a nenhum grupo
+- nenhum, um ou mais usuários que farão uso da reserva. Por padrão, é o próprio usuário que está fazendo a reserva.
 - RELACIONAMENTO: uma lista de observadores, que desejam receber notificação caso a reserva seja cancelada ou alterada
 
-RN: duas reservas ativas não podem ser realizadas com interseções; ou seja, cada reserva ativa ocupa um dia e faixa de horário único e exclusivo, para um artefato.
+RN: duas reservas ativas não podem ser realizadas com interseções; ou seja, cada reserva ativa ocupa um dia e faixa de horário único e exclusivo, para um artefato (inserir esta regra no banco de dados)
 
-RN: o horário inicial de uma reserva deve ser sempre menor que o horário final da reserva
+RN: o horário inicial de uma reserva deve ser sempre menor que o horário final da reserva (inserir esta regra no banco de dados)
 
-RN: uma reserva está concluída quando a data da reserva se torna "passada"; porém, não há diferença (restrições) na manipulação de reservas passadas, em execução ou futuras.
+RN: uma reserva está concluída quando a data da reserva se torna "passada", ou concluída; porém, não há diferença (restrições) na manipulação de reservas passadas, em execução ou futuras.
 
 RN: como todos os dados da reserva são públicos, não é recomendado registrar dados sensíveis na reserva.
 
 RN: reservas em lote são criadas simultaneamente e individualmente; são criadas com o mesmo horário desde a data inicial até uma *data final*, informada no momento da criação, a cada dia da semana marcado na reserva inicial;
+
+RN: quando uma reserva é alterada, na verdade ela a reserva é cancelada e é criada uma nova reserva com os novos dados alterados
+
+RN: os campos que informam o usuário que cancelou a reserva e o motivo do cancelamento só podem possuir valores se o campo "ativo" estiver falso (pode ser inserido um CHECK no banco de dados)
 
 RN: a alteração de uma reserva em lote é feita de forma individual, ou da reserva atual "para frente".
 
@@ -43,11 +49,15 @@ RN: se uma reserva em lote for alterada de forma individual, aquela reserva "dei
 
 RN: se a reserva em lote for alterada "daquela para frente", a reserva atual e as sequentes receberão um novo "batch_id", para diferenciar o novo "lote" do lote antigo
 
-RN: a alteração de uma reserva pode ser feita pela pessoa que fez a reserva, por um administrador do artefato envolvido na reserva ou por um superadmin.
+RN: a alteração ou cancelamento de uma reserva pode ser feita pela pessoa que fez a reserva, por um dos usuários que farão uso da reserva, por um administrador do artefato envolvido na reserva ou por um superadmin.
+
+RN: o usuário que alterou a reserva passa a ser o novo "autor" da reserva.
 
 RN: quando uma reserva é alterada, o identificador da versão anterior da reserva fica registrado em um campo específico na reserva nova. Isso é importante para manter o histórico de alterações da reserva.
 
-Um usuário possui:
+RN: ao alterar uma reserva, os observadores da reserva antiga são "copiados" também para a nova reserva.
+
+# Um usuário possui:
 - um identificador único
 - um nome
 - um email
@@ -56,10 +66,13 @@ Um usuário possui:
 - uma observação, para registros textuais quaisquer
 - a organização à qual o usuário pertence
 - o indicador (flag: verdadeiro ou falso) de super-admin
+- um indicador (flag) que diz se o usuário está ativo ou não
 - RELACIONAMENTO: uma lista reversa de artefatos os quais o usuário pode administrar
 - RELACIONAMENTO: uma lista reversa de reservas que o usuário está observando, para ser notificado em caso de cancelamento ou alteração
 
 RN: o email é um atributo de valor único no sistema
+
+RN: usuários inativos não podem entrar em novas reservas
 
 RN: normalmente, um usuário de uma organização não pode reservar artefatos de outra organização. Entretanto, um usuário pode ser alterado para outra organização, para ter acesso aos recursos. Essa alteração é feita por um superadministrador.
 
@@ -72,6 +85,7 @@ Um artefato possui:
 - uma data de registro no sistema
 - a organização à qual pertence o artefato
 - um indicador (flag: verdadeiro ou falso) que diz se o artefato é restrito ou não
+- um indicador (flag) que diz se o artefato está ativo ou não (pode estar temporariamente inapto a receber novas reservas)
 - RELACIONAMENTO: uma lista reversa dos usuários específicos que podem administrar esse artefato
 
 RN: um artefato restrito somente pode ser reservado por um administrador daquele artefato, ou por um superadmin.
@@ -86,13 +100,15 @@ Um propósito possui:
 Uma organização possui:
 - um identificador único
 - um nome (exemplos: "IFC Campus Blumenau", "IFC Reitoria")
-- RELACIONAMENTO: uma lista reversa das categorias, que correspondem aos conjuntos de artefatos que os usuários daquela organização podem reservar
+- RELACIONAMENTO: uma lista reversa das categorias os usuários daquela organização podem acessar; desta forma, selecionam-se os artefatos que esses usuários podem reservar.
+
+RN: em torno de uma reserva, a organização do usuário, do artefato, do propósito e do grupo devem ser a mesma
 
 Um grupo possui:
 - um identificador único
-- um acrônimo, usado para localização rápida; exemplos: BCC, EMI Info
+- um acrônimo, usado para localização rápida ou exibição resumida; exemplos: BCC, EMI Info
 - um nome; por exemplo: Curso Superior de Bacharelado em Ciência da Computação
-- se o grupo está ativo ou não; grupos inativos não "aparecem" no sistema
+- se o grupo está ativo ou não; grupos inativos não "aparecem" na criação de novas reservas
 - uma observação, para registros textuais quaisquer
 - uma data de registro no sistema
 - uma cor, para auxiliar a apresentação de reservas do grupo
@@ -104,17 +120,20 @@ Uma categoria possui:
 - a organização à qual pertence essa categoria
 - DERIVADO: uma lista reversa de artefatos relacionados ao artefato
 
-Um grupo de usuários permitido (GUP) possui:
+Um conjunto de usuários permitidos (CUP) possui:
 - um identificador único
 - uma descrição; exemplo: "Servidores do IFC"
-- um filtro; por exemplos: "ifc.edu.br", "hvescovi@gmail.com"
-- a organização à qual pertence esse grupo de usuários
+- um filtro; exemplos: "ifc.edu.br", "hvescovi@gmail.com"
+- um tipo, para explicitar se o filtro é domínio ou email específico
+- a organização à qual pertence esse conjunto de usuários
 
-RN: o auto-cadastramento é permitido apenas para usuários que estejam cadastrado no GUP.
+RN: o auto-cadastramento é permitido apenas para usuários que estejam cadastrados no CUP.
 
-RN: quem cadastra usuários no GUP é o superadmin
+RN: quem cadastra usuários no CUP é o superadmin
 
 RN: filtro de domínio são tratados com exatidão; subdomínios não são considerados. Por exemplo, se o filtro é "ifc.edu.br", aceita-se "jorge@ifc.edu.br", mas não "joao@blumenau.ifc.edu.br" ou "maria@sisae.ifc.edu.br"
+
+RN: o usuário deverá confirmar seu email via verificação enviada por email
 
 RN: ao se cadastrar, o novo usuário escolhe a organização à qual pertence, caso mais de uma organização aceite o usuário. Caso erre a escolha, será necessário um superadmin para fazer a alteração de vínculo de organização.
 
