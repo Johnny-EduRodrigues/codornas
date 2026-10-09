@@ -64,30 +64,40 @@
 - tipo: data/hora (timestamp)
 - obtida automaticamente do sistema
 
-15)  canceler_user_id
+15)  canceled_by_user_id
 - chave estrangeira do usuário que cancelou a reserva
 - referente ao id da classe User
 - quando houver valor neste campo (diferente de NULL), essa reserva deve estar com o campo active igual a false, pois foi cancelada. 
 
-16)  canceler_user
+16)  canceled_by_user
 - objeto da classe User, montado a partir de canceler_user_id
 - usuário que cancelou a reserva
 
-17)  canceler_annotation
+17)  cancellation_reason
 - observação/justificativa sobre o porquê da reserva ter sido cancelado
 - tipo Text
 - campo de prenchimento obrigatório
 
-18)  groupid
-- grupo ao qual a reserva pertence; por exemplo, uma reserva de uma disciplina pode pertencer ao grupo "Ciência da Computação"
-
-19)  group
-  objeto Grupo montado a partir de group_id
-
-20)  previous_reservation_id
+18)  previous_reservation_id
 - quando uma reserva for alterada, esse campo armazena o ID da reserva que foi desativada e que possuía os valores anteriores à reserva atual ativa
 - esse campo pode ter valor também para reservas canceladas, pois pode ter havido versões anteriores da reserva
+- o valor é praticamente uma chave estrangeira para a própria tabela
+- é um valor único no sistema (UNIQUE), pois não é desejável haver ramificações
+- pode possuir um valor nulo, o que significa que a reserva não possui histórico de alterações
 
-21)  observers
+19) previous_reservation
+- objeto da reserva anterior, montado sobre previous_reservation_id
+
+20)  groupid
+- grupo ao qual a reserva pertence; por exemplo, uma reserva de uma disciplina pode pertencer ao grupo "Ciência da Computação"
+
+21)  group
+  objeto Grupo montado a partir de group_id
+
+22) takers
+- lista de usuários que vão fazer uso do artefato reservado (vão efetivamente "pegar" o artefato para usar).
+Por padrão, na criação da reserva é o usuário que está criando a reserva, mas podem ser especificados outros usuários. Quem está fazendo a reserva pode não incluir a si mesmo e incluir outro usuário, ou outros usuários.
+
+23) observers
 - lista reversa de usuários que estão interessados caso essa reserva fique inativa (seja ALTERADA ou CANCELADA)
 - a alteração de uma reserva implica no cancelamento da reserva e na criação de uma nova reserva alterada
