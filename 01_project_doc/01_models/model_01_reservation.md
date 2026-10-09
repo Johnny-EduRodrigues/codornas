@@ -88,7 +88,7 @@
 19) previous_reservation
 - objeto da reserva anterior, montado sobre previous_reservation_id
 
-20)  groupid
+20)  group_id
 - grupo ao qual a reserva pertence; por exemplo, uma reserva de uma disciplina pode pertencer ao grupo "Ciência da Computação"
 
 21)  group

@@ -119,7 +119,7 @@ RN: a desativação de um artefato não remove automaticamente as reservas daque
 - a organização à qual pertence o propósito
 - RN (regra de negócio): o propósito foi separado para reduzir a repetição de descrições similares, no caso de alocação de um laboratório para aula, por exemplo. Para o caso de um propósito específico, esse propósito específico será criado como um novo propósito, e será cadastrado. O campo observação da reserva sempre poderá ser usado para informações complementares.
 
-# Uma organização possui:
+# Uma organização (tenant) possui:
 - um identificador único
 - um nome (exemplos: "IFC Campus Blumenau", "IFC Reitoria")
 - RELACIONAMENTO: uma lista reversa das categorias que os usuários daquela organização podem visualizar, a fim de filtrar artefatos quando forem selecionar artefatos; 
@@ -142,7 +142,7 @@ RN: ao desativar um grupo, as reservas associadas permanecem inalteradas
 - um identificador único
 - um nome; exemplos: Sala de Aula, Sala de Aula do piso superior, Laboratório de Informática
 - a organização à qual pertence essa categoria; esse vínculo é apenas para filtrar dados entre organizações, na listagem de categorias, e não para controlar acesso de artefatos
-- DERIVADO: uma lista reversa de artefatos relacionados ao artefato
+- RELACIONAMENTO: uma lista reversa de artefatos relacionados ao artefato
 
 RN: uma categoria deve pertencer à mesma organização dos artefatos os quais reúne (artefatos que pertencem àquela categoria).
 

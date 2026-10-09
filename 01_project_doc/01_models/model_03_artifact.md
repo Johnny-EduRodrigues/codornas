@@ -23,6 +23,8 @@ Laboratório A04
 - tipo: Boolean
 - valor padrão: Falso
 
+8) active
+
 8) admins
 - lista reversa de usuários que podem administrar reservas deste artefato
 - List[User]
