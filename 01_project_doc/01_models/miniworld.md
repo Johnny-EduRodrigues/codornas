@@ -6,7 +6,7 @@ Artefatos podem ser categorizados, por exemplo: Sala de Aula, Laboratório de In
 
 O sistema funciona com múltiplas organizações, ou seja, o sistema é multi-campi (ou multi-tenant). Um usuário pertence a no mínimo uma organização (escolhida quando ele se cadastra), e depois pode ser vinculado a outras organizações por um superadmin.
 
-Qualquer usuário do sistema pode efetuar reservas, a não ser que o artefato seja restrito; nesse caso, apenas um usuário "super" ou um usuário pertencente à lista de usuários administradores daquele artefato poderão efetuar reservas. O sistema permite visualizar os dados de todas as reservas de forma pública, sem a necessidade de realizar login, por considerar apenas artefatos não sigilosos. Qualquer usuário poderá se auto-cadastrar no sistema com um email e senha, ou via google (login via google), desde que seja aceito conforme especificação existente no grupo de usuários permitidos (GUP). No GUP existem domínios (por exemplo, ifc.edu.br) ou emails permitidos (para poder incluir, por exemplo, emails de estagiários ou outras pessoas terceiras) que filtram os usuários que podem se cadastrar.
+Qualquer usuário do sistema pode efetuar reservas, a não ser que o artefato seja restrito; nesse caso, apenas um usuário "super" ou um usuário pertencente à lista de usuários administradores daquele artefato poderão efetuar reservas. O sistema permite visualizar os dados de todas as reservas de forma pública, sem a necessidade de realizar login, por considerar apenas artefatos não sigilosos. Qualquer usuário poderá se auto-cadastrar no sistema com um email e senha, ou via google (login via google), desde que seja aceito conforme especificação existente no conjunto de usuários permitidos (CUP). No CUP existem domínios (por exemplo, ifc.edu.br) ou emails permitidos (para poder incluir, por exemplo, emails de estagiários ou outras pessoas terceiras) que filtram os usuários que podem se cadastrar.
 
 # Descrição das entidades
 
@@ -26,7 +26,7 @@ Qualquer usuário do sistema pode efetuar reservas, a não ser que o artefato se
 - uma anotação sobre o motivo do cancelamento da reserva, caso ela não esteja ativa; esse campo é obrigatório (não pode ser vazio) para quando uma reserva for cancelada ou alterada
 - o identificador da versão anterior da reserva, em caso de alteração de reserva; é um valor único no cadastro
 - um grupo que agrupa reservas de alguma maneira; por exemplo, uma reserva de uma sala de aula para uma disciplina pode pertencer ao grupo "Ciência da Computação"; uma reserva para uma palestra sobre "Como empreender" pode pertencer ao grupo "Interesse geral". A reserva pode, entretanto, não pertencer a nenhum grupo
-- os usuários que efetivamente vão pegar o artefato reservado para usá-lo. Por padrão, é o próprio usuário que está fazendo a reserva; mas pode ser informado outro usuário no momento da criação, ou mais de um usuário; mas precisa existir pelo menos um usuário destinado a fazer o uso do artefato reservado. Não há restrição de que esses usuários pertençam também a outras organizações, mas para que sejam incluídos como participante do uso do artefato, é preciso que pertençam à organização do artefato
+- RELACIONAMENTO: uma lista de usuários que efetivamente vão pegar o artefato reservado para usá-lo. Por padrão, é o próprio usuário que está fazendo a reserva; mas pode ser informado outro usuário no momento da criação, ou mais de um usuário; mas precisa existir pelo menos um usuário destinado a fazer o uso do artefato reservado. Não há restrição de que esses usuários pertençam também a outras organizações, mas para que sejam incluídos como participante do uso do artefato, é preciso que pertençam à organização do artefato
 - RELACIONAMENTO: uma lista de observadores, que desejam receber notificação caso a reserva seja cancelada ou alterada
 
 RN: duas reservas ativas não podem ser realizadas com interseções; ou seja, cada reserva ativa ocupa um dia e faixa de horário único e exclusivo, para um artefato (inserir esta regra no banco de dados)
@@ -49,7 +49,7 @@ RN: após a criação das 'reservas em lote, será possível identificar a data 
 
 RN: quando uma reserva é alterada, na verdade ela a reserva é cancelada e é criada uma nova reserva com os novos dados alterados
 
-RN: os campos que informam o usuário que cancelou a reserva e o motivo do cancelamento só podem possuir valores se o campo "ativo" estiver falso (pode ser inserido um CHECK no banco de dados); se a reserva estiver ativa, esses dois campos devem ser nulos
+RN: os campos que informam o usuário que cancelou a reserva e o motivo do cancelamento só podem possuir valores (strings não vazias) se o campo "ativo" estiver falso (pode ser inserido um CHECK no banco de dados); se a reserva estiver ativa, esses dois campos devem ser nulos
 
 RN: a alteração de uma reserva é feita de forma transacional: a reserva antiga não pode ficar desativada se a criação da nova reserva falhar.
 
@@ -65,13 +65,15 @@ RN: em uma alteração de reservas em lote, todos os campos da reserva podem ser
 
 RN: a alteração ou cancelamento de uma reserva pode ser feita pela pessoa que fez a reserva, por um dos usuários que farão uso da reserva, por um administrador do artefato envolvido na reserva ou por um superadmin.
 
+RN: um usuário, mesmo sendo superadmin, também precisa pertencer à organização do artefato que se encontra na reserva a ser alterada; ou seja, o usuário é superadmin nas organizações em que está vinculado
+
 RN: o usuário que alterou a reserva passa a ser o novo "autor" da reserva.
 
 RN: quando uma reserva é alterada, o identificador da versão anterior da reserva fica registrado em um campo específico na reserva nova. Isso é importante para manter o histórico de alterações da reserva.
 
 RN: ao alterar uma reserva, os observadores da reserva antiga são "copiados" também para a nova reserva, assim como os usuários que farão usufruto da nova reserva. O usuário que está fazendo a nova reserva pode entrar ou não na lista de usuários que vai usufruir do artefato reservado (isso pode ser escolhido na alteração da reserva, caso o usuário que altera seja diferente do usuário da reserva anterior)
 
-RN: dentro de uma reserva, o propósito, o grupo, os observadores e os usuários que vão usar o artefato da reserva devem estar vinculados à organização do artefato reservado.
+RN: dentro de uma reserva: o propósito, o grupo, os observadores e os usuários que vão usar o artefato da reserva devem estar vinculados à organização do artefato reservado.
 
 # Um usuário possui:
 - um identificador único
@@ -94,7 +96,7 @@ RN: um usuário só pode reservar artefatos de uma das organizações às quais 
 
 RN: o superadministrador tem acesso ao sistema de forma completa (como um root), a todas as organizações.
 
-Um artefato possui:
+# Um artefato possui:
 - um identificador único
 - um nome
 - pertence a uma ou mais categorias (exemplo: Sala de Aula, Sala de aula do piso superior, Laboratório de Informática)
@@ -110,21 +112,21 @@ RN: as informações de uma reserva que envolve um artefato restrito são visív
 
 RN: a desativação de um artefato não remove automaticamente as reservas daquele artefato, apenas impede a criação de novas reservas com aquele artefato desativado
 
-Um propósito possui:
+# Um propósito possui:
 - um identificador único
 - uma descrição (exemplo: "Aula de Matemática 102 info / Alexandre", "Prática de Esportes: futsal, vôlei, tênis de mesa", "II Workshop das Mulheres na Ciência")
 - uma data de registro no sistema
 - a organização à qual pertence o propósito
 - RN (regra de negócio): o propósito foi separado para reduzir a repetição de descrições similares, no caso de alocação de um laboratório para aula, por exemplo. Para o caso de um propósito específico, esse propósito específico será criado como um novo propósito, e será cadastrado. O campo observação da reserva sempre poderá ser usado para informações complementares.
 
-Uma organização possui:
+# Uma organização possui:
 - um identificador único
 - um nome (exemplos: "IFC Campus Blumenau", "IFC Reitoria")
-- RELACIONAMENTO: uma lista reversa das categorias os usuários daquela organização podem acessar; desta forma, selecionam-se os artefatos que esses usuários podem reservar.
+- RELACIONAMENTO: uma lista reversa das categorias que os usuários daquela organização podem visualizar, a fim de filtrar artefatos quando forem selecionar artefatos; 
 
 RN: todas as entidades que possuem relação com a tabela de organizações terão relacionamento com garantia de integridade referencial.
 
-Um grupo possui:
+# Um grupo possui:
 - um identificador único
 - um acrônimo, usado para localização rápida ou exibição resumida; exemplos: BCC, EMI Info
 - um nome; por exemplo: Curso Superior de Bacharelado em Ciência da Computação
@@ -136,7 +138,7 @@ Um grupo possui:
 
 RN: ao desativar um grupo, as reservas associadas permanecem inalteradas
 
-Uma categoria possui:
+# Uma categoria possui:
 - um identificador único
 - um nome; exemplos: Sala de Aula, Sala de Aula do piso superior, Laboratório de Informática
 - a organização à qual pertence essa categoria; esse vínculo é apenas para filtrar dados entre organizações, na listagem de categorias, e não para controlar acesso de artefatos
@@ -144,7 +146,7 @@ Uma categoria possui:
 
 RN: uma categoria deve pertencer à mesma organização dos artefatos os quais reúne (artefatos que pertencem àquela categoria).
 
-Um conjunto de usuários permitidos (CUP) possui:
+# Um conjunto de usuários permitidos (CUP) possui:
 - um identificador único
 - uma descrição; exemplo: "Servidores do IFC"
 - um filtro; exemplos: "ifc.edu.br", "hvescovi@gmail.com"
