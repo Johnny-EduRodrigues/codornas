@@ -1,0 +1,155 @@
+@startdot
+digraph MER_Conceitual_Chen {
+  graph [
+  label="MER conceitual — Notação de Chen\n(retângulos: entidades; losangos: relacionamentos; elipses: atributos)",
+  labelloc=t,
+  fontsize=16,
+  fontname="Arial",
+  rankdir=TB,
+  splines=polyline,
+  nodesep=0.12,
+  ranksep=0.25,
+  margin=0.02,
+  pad=0.12,
+  ratio=compress,
+  bgcolor="white",
+  remincross=true
+];
+ 
+  Tenant [label="Organização"];
+  User [label="Usuário"];
+  Artifact [label="Artefato"];
+  Category [label="Categoria"];
+  Purpose [label="Finalidade"];
+  ReservationGroup [label="Grupo de reservas"];
+  Reservation [label="Reserva"];
+  ReservationBatch [label="Lote de reservas"];
+  AllowedSource [label="Origem permitida"];
+
+node [shape=diamond, style="filled", fillcolor="#fff2cc", width=0.9, height=0.48, margin=0.04, fontsize=9];
+  TenantUser [label="participa de"];
+  TenantArtifact [label="disponibiliza"];
+  TenantCategory [label="define"];
+  TenantPurpose [label="define"];
+  TenantGroup [label="organiza"];
+  TenantReservation [label="mantém"];
+  TenantAllowedSource [label="autoriza"];
+  Reserves [label="solicita"];
+  BelongsToBatch [label="agrupa"];
+  ForArtifact [label="é para"];
+  WithPurpose [label="tem finalidade"];
+  InGroup [label="pertence a"];
+  CategorizedAs [label="é classificado como"];
+  Administers [label="administra"];
+  CancelledBy [label="é cancelada por"];
+  UsedBy [label="é utilizada por"];
+  ObservedBy [label="é observada por"];
+  PreviousVersion [label="sucede"];
+
+node [shape=ellipse, style="filled", fillcolor="#f4f7fa", fontsize=9, penwidth=0.8, margin="0.06,0.03"];
+
+  TenantName [label="nome"];
+  UserName [label="nome"];
+  UserEmail [label="e-mail"];
+  UserPassword [label="credencial de acesso"];
+  UserObs [label="observações"];
+  UserSuperAdmin [label="superadministrador?"];
+  UserActive [label="ativo?"];
+  ArtifactName [label="nome"];
+  ArtifactRestricted [label="restrito?"];
+  ArtifactActive [label="ativo?"];
+  CategoryName [label="nome"];
+  PurposeDescription [label="descrição"];
+  GroupAcronym [label="sigla"];
+  GroupName [label="nome"];
+  GroupActive [label="ativo?"];
+  GroupObs [label="observações"];
+  GroupColor [label="cor"];
+  ReservationDate [label="data"];
+  ReservationStart [label="horário inicial"];
+  ReservationEnd [label="horário final"];
+  ReservationActive [label="ativa?"];
+  ReservationObs [label="observações"];
+  CancellationAnnotation [label="justificativa do cancelamento"];
+  AllowedDescription [label="descrição"];
+  AllowedFilter [label="domínio ou e-mail permitido"];
+  AllowedType [label="tipo de filtro"];
+
+  Tenant -> TenantName;
+  User -> UserName;
+  User -> UserEmail;
+  User -> UserPassword;
+  User -> UserObs;
+  User -> UserSuperAdmin;
+  User -> UserActive;
+  Artifact -> ArtifactName;
+  Artifact -> ArtifactRestricted;
+  Artifact -> ArtifactActive;
+  Category -> CategoryName;
+  Purpose -> PurposeDescription;
+  ReservationGroup -> GroupAcronym;
+  ReservationGroup -> GroupName;
+  ReservationGroup -> GroupActive;
+  ReservationGroup -> GroupObs;
+  ReservationGroup -> GroupColor;
+  Reservation -> ReservationDate;
+  Reservation -> ReservationStart;
+  Reservation -> ReservationEnd;
+  Reservation -> ReservationActive;
+  Reservation -> ReservationObs;
+  Reservation -> CancellationAnnotation;
+  AllowedSource -> AllowedDescription;
+  AllowedSource -> AllowedFilter;
+  AllowedSource -> AllowedType;
+
+  Tenant -> TenantUser [taillabel="0..N", labeldistance=1.1];
+  TenantUser -> User [headlabel="1..N", labeldistance=1.1];
+  Tenant -> TenantArtifact [taillabel="0..N", labeldistance=1.1];
+  TenantArtifact -> Artifact [headlabel="1", labeldistance=1.1];
+  Tenant -> TenantCategory [taillabel="0..N", labeldistance=1.1];
+  TenantCategory -> Category [headlabel="1", labeldistance=1.1];
+  Tenant -> TenantPurpose [taillabel="0..N", labeldistance=1.1];
+  TenantPurpose -> Purpose [headlabel="1", labeldistance=1.1];
+  Tenant -> TenantGroup [taillabel="0..N", labeldistance=1.1];
+  TenantGroup -> ReservationGroup [headlabel="1", labeldistance=1.1];
+  Tenant -> TenantReservation [taillabel="0..N", labeldistance=1.1];
+  TenantReservation -> Reservation [headlabel="1", labeldistance=1.1];
+  Tenant -> TenantAllowedSource [taillabel="0..N", labeldistance=1.1];
+  TenantAllowedSource -> AllowedSource [headlabel="1", labeldistance=1.1];
+
+  User -> Reserves [taillabel="0..N", labeldistance=1.1];
+  Reserves -> Reservation [headlabel="1", labeldistance=1.1];
+  Reservation -> ForArtifact [taillabel="1", labeldistance=1.1];
+  ForArtifact -> Artifact [headlabel="0..N", labeldistance=1.1];
+  Reservation -> WithPurpose [taillabel="1", labeldistance=1.1];
+  WithPurpose -> Purpose [headlabel="0..N", labeldistance=1.1];
+  Reservation -> InGroup [taillabel="0..1", labeldistance=1.1];
+  InGroup -> ReservationGroup [headlabel="0..N", labeldistance=1.1];
+  ReservationBatch -> BelongsToBatch [taillabel="1..N", labeldistance=1.1];
+  BelongsToBatch -> Reservation [headlabel="0..1", labeldistance=1.1];
+
+  Artifact -> CategorizedAs [taillabel="1..N", labeldistance=1.1];
+  CategorizedAs -> Category [headlabel="0..N", labeldistance=1.1];
+  User -> Administers [taillabel="0..N", labeldistance=1.1];
+  Administers -> Artifact [headlabel="0..N", labeldistance=1.1];
+  User -> CancelledBy [taillabel="0..N", labeldistance=1.1];
+  CancelledBy -> Reservation [headlabel="0..1", labeldistance=1.1];
+  Reservation -> UsedBy [taillabel="0..N", labeldistance=1.1];
+  UsedBy -> User [headlabel="0..N", labeldistance=1.1];
+  Reservation -> ObservedBy [taillabel="0..N", labeldistance=1.1];
+  ObservedBy -> User [headlabel="0..N", labeldistance=1.1];
+  Reservation -> PreviousVersion [taillabel="0..1", labeldistance=1.1, label="versão anterior"];
+  PreviousVersion -> Reservation [headlabel="0..1", labeldistance=1.1, label="nova versão"];
+
+  subgraph cluster_legend {
+    label="Cardinalidades";
+    fontname="Arial";
+    fontsize=10;
+    color="#cbd5df";
+    style="rounded";
+    LegendOne [shape=plaintext, label="1: exatamente um"];
+    LegendOptional [shape=plaintext, label="0..1: nenhum ou um"];
+    LegendMany [shape=plaintext, label="0..N / 1..N: nenhum ou muitos / um ou muitos"];
+  }
+}
+@enddot
