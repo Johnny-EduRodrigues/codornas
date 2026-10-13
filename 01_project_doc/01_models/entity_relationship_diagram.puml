@@ -1,0 +1,143 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity "Tenant" as Tenant {
+  *id : int <<PK>>
+  --
+  *name : varchar(250)
+}
+
+entity "User" as User {
+  *id : int <<PK>>
+  --
+  *name : varchar(250)
+  *email : varchar <<UNIQUE>>
+  *created_at : datetime
+  password : varchar
+  obs : text
+  *tenant_id : int <<FK>>
+  *super_admin : boolean
+}
+
+entity "Artifact" as Artifact {
+  *id : int <<PK>>
+  --
+  *name : varchar(250)
+  *created_at : datetime
+  *tenant_id : int <<FK>>
+  *restricted : boolean
+}
+
+entity "Category" as Category {
+  *id : int <<PK>>
+  --
+  *name : varchar(250)
+  *created_at : datetime
+  *tenant_id : int <<FK>>
+}
+
+entity "ArtifactCategory" as ArtifactCategory {
+  *artifact_id : int <<PK, FK>>
+  *category_id : int <<PK, FK>>
+}
+
+entity "ArtifactAdmin" as ArtifactAdmin {
+  *artifact_id : int <<PK, FK>>
+  *user_id : int <<PK, FK>>
+}
+
+entity "Purpose" as Purpose {
+  *id : int <<PK>>
+  --
+  *description : varchar(250)
+  *created_at : datetime
+  *tenant_id : int <<FK>>
+}
+
+entity "ReservationGroup" as ReservationGroup {
+  *id : int <<PK>>
+  --
+  *acronym : varchar
+  *name : varchar(250)
+  *active : boolean
+  obs : text
+  *created_at : datetime
+  color : varchar
+  *tenant_id : int <<FK>>
+}
+
+entity "Reservation" as Reservation {
+  *id : int <<PK>>
+  --
+  *user_id : int <<FK>>
+  *artifact_id : int <<FK>>
+  *date : date
+  *start_time : time
+  *end_time : time
+  *purpose_id : int <<FK>>
+  *active : boolean
+  batch_id : uuid
+  obs : text
+  *created_at : datetime
+  canceler_user_id : int <<FK>>
+  canceler_annotation : text
+  previous_reservation_id : int <<FK>>
+  group_id : int <<FK>>
+  *tenant_id : int <<FK>>
+}
+
+entity "ReservationObserver" as ReservationObserver {
+  *reservation_id : int <<PK, FK>>
+  *user_id : int <<PK, FK>>
+}
+
+entity "AllowedSource" as AllowedSource {
+  *id : int <<PK>>
+  --
+  *description : varchar(250)
+  *filter_or_email_allowed : varchar(320)
+  *tenant_id : int <<FK>>
+}
+
+Tenant ||--o{ User
+Tenant ||--o{ Artifact
+Tenant ||--o{ Category
+Tenant ||--o{ Purpose
+Tenant ||--o{ ReservationGroup
+Tenant ||--o{ Reservation
+Tenant ||--o{ AllowedSource
+
+Artifact ||--o{ ArtifactCategory
+Category ||--o{ ArtifactCategory
+User ||--o{ ArtifactAdmin
+Artifact ||--o{ ArtifactAdmin
+
+User ||--o{ Reservation : creates
+User |o--o{ Reservation : cancels
+Artifact ||--o{ Reservation
+Purpose ||--o{ Reservation
+ReservationGroup |o--o{ Reservation
+Reservation |o--o{ Reservation : previous_version
+
+Reservation ||--o{ ReservationObserver
+User ||--o{ ReservationObserver
+
+note right of Reservation
+  Uma reserva pode não ter grupo ou lote.
+  previous_reservation_id mantém o histórico
+  da versão anterior.
+
+  RN: start_time < end_time.
+  RN: reservas ativas do mesmo artefato
+  não podem ter horários sobrepostos.
+  Reservas de um lote compartilham batch_id;
+  alterações podem separar ou criar um novo lote.
+end note
+
+note right of AllowedSource
+  O filtro representa um domínio ou email
+  permitido para autocadastro na organização.
+end note
+
+@enduml
