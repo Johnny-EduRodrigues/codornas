@@ -1,5 +1,3 @@
-Descrição da classe Category
-
 1) id
 - tipo Inteiro
   
@@ -17,7 +15,7 @@ Mobília
 4) created_at
 
 5) artifacts
-- lista reversa de Artifact
+- lista de Artifact
 - contém os artefatos que estão associados a esta categoria
 - um artefato está vinculado a uma ou mais categorias
 - List[Artifact]

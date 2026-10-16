@@ -46,6 +46,7 @@
 - tipo boolean
 - reservas ativas são válidas, reservas não ativas foram canceladas
 - quando uma reserva é alterada, a antiga é cancelada e uma nova é criada
+- quando a reserva for desativada (active=false), os campos canceled_by_user_id e cancellation_reason devem ser preenchidos (não nulos) 
 
 12) batch_id
 - código que identifica reserva como "em lote"
@@ -70,7 +71,7 @@
 - quando houver valor neste campo (diferente de NULL), essa reserva deve estar com o campo active igual a false, pois foi cancelada. 
 
 16)  canceled_by_user
-- objeto da classe User, montado a partir de canceler_user_id
+- objeto da classe User, montado a partir de canceled_by_user_id
 - usuário que cancelou a reserva
 
 17)  cancellation_reason

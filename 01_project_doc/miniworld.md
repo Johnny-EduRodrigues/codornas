@@ -6,7 +6,7 @@ Artefatos podem ser categorizados, por exemplo: Sala de Aula, Laboratório de In
 
 O sistema funciona com múltiplas organizações, ou seja, o sistema é multi-campi (ou multi-tenant). Um usuário pertence a no mínimo uma organização (escolhida quando ele se cadastra), e depois pode ser vinculado a outras organizações por um superadmin.
 
-Qualquer usuário do sistema pode efetuar reservas, a não ser que o artefato seja restrito; nesse caso, apenas um usuário "super" ou um usuário pertencente à lista de usuários administradores daquele artefato poderão efetuar reservas. O sistema permite visualizar os dados de todas as reservas de forma pública, sem a necessidade de realizar login, por considerar apenas artefatos não sigilosos. Qualquer usuário poderá se auto-cadastrar no sistema com um email e senha, ou via google (login via google), desde que seja aceito conforme especificação existente no conjunto de usuários permitidos (CUP). No CUP existem domínios (por exemplo, ifc.edu.br) ou emails permitidos (para poder incluir, por exemplo, emails de estagiários ou outras pessoas terceiras) que filtram os usuários que podem se cadastrar.
+Qualquer usuário do sistema pode efetuar reservas, a não ser que o artefato seja restrito; nesse caso, apenas um usuário superadmin ou um usuário pertencente à lista de usuários administradores daquele artefato poderão efetuar reservas. O sistema permite visualizar os dados de todas as reservas de forma pública, sem a necessidade de realizar login, por considerar apenas artefatos não sigilosos. Qualquer usuário poderá se auto-cadastrar no sistema com um email e senha, ou via google (login via google), desde que seja aceito conforme especificação existente no conjunto de usuários permitidos (CUP). No CUP existem domínios (por exemplo, ifc.edu.br) ou emails permitidos (para poder incluir, por exemplo, emails de estagiários ou outras pessoas terceiras) que filtram os usuários que podem se cadastrar.
 
 # Descrição das entidades
 
@@ -96,6 +96,8 @@ RN: um usuário só pode reservar artefatos de uma das organizações às quais 
 
 RN: o superadministrador tem acesso ao sistema de forma completa (como um root), a todas as organizações.
 
+RN: um usuário só pode ser removido de uma organização se não houver entidades da organização a ser removida associadas a ele
+
 # Um artefato possui:
 - um identificador único
 - um nome
@@ -111,6 +113,8 @@ RN: um artefato restrito somente pode ser reservado por um administrador daquele
 RN: as informações de uma reserva que envolve um artefato restrito são visíveis da mesma forma que reservas de artefatos não restritos.
 
 RN: a desativação de um artefato não remove automaticamente as reservas daquele artefato, apenas impede a criação de novas reservas com aquele artefato desativado
+
+RN: um artefato pode ser reservado apenas por usuários pertencentes à mesma organização do artefato
 
 # Um propósito possui:
 - um identificador único

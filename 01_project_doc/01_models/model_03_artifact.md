@@ -9,7 +9,8 @@ Auditório
 Laboratório A04
 
 3) categories
-- lista reversa de categorias às quais pertencem o artefato
+- lista de categorias às quais pertencem o artefato
+- uma categoria contém nenhum, um ou mais artefatos
 - List[Category]
 
 4) created_at
@@ -25,7 +26,7 @@ Laboratório A04
 
 8) active
 
-8) admins
+9) admins
 - lista reversa de usuários que podem administrar reservas deste artefato
 - List[User]
 

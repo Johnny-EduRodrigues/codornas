@@ -9,19 +9,24 @@ Ricardo de la Rocha Ladeira
 3) email
 - email usado para acessar o sistema, tanto via login com google quanto via acesso com email e senha
 
-4) created_at
+4) timestamp_email_verified
+- timestamp sobre quando o email foi confirmado pelo usuário
+- o usuário só pode iniciar a marcação de reservas após confirmar o email
 
-5) password
+5) created_at
+
+6) password
 - senha cifrada
 
-6) obs
+7) obs
 
-7) tenants
+8) tenants
 - RELACIONAMENTO: uma lista de organizações (tenants) às quais o usuário pertence
+- um usuário deve pertencer a pelo menos uma organização
 
 9) super_admin
 - informa se o usuário é um "super admin"
-- "super admin" pode executar todas as ações no sistema
+- "super admin" pode executar todas as ações no sistema, mas atuando apenas em entidades da(s) organização(ções) à(s)qual(is) pertence
 - tipo Boolean
 
 10) active
