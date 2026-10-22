@@ -1,9 +1,17 @@
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from siraback.config import db
+from siraback.extensions import db
+from siraback.models.associations import user_tenants
+
 
 class Tenant(db.Model):
     __tablename__ = "sb_tenant"
+
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(250))
+    categories: Mapped[list["Category"]] = relationship(back_populates="tenant")
+    users: Mapped[list["User"]] = relationship(
+        secondary=user_tenants,
+        back_populates="tenants",
+    )

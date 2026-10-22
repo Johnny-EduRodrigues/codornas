@@ -58,10 +58,23 @@ else:
 # aplicar CORS
 CORS(app)
 
-# Inicialização da extensão Flask/SQLAlchemy
-db = SQLAlchemy(app)
+# importação do SQLAlchemy
+from siraback.extensions import db
 
-# preparar migration
+# associação do SQLAlchemy ao Flask
+db.init_app(app)
+
+# importação dos modelos
+from siraback.models.tenant import Tenant
+from siraback.models.user import User
+from siraback.models.category import Category
+from siraback.models.artifact import Artifact
+from siraback.models.purpose import Purpose
+from siraback.models.group import Group
+from siraback.models.allowed_source import AllowedSource
+from siraback.models.reservation import Reservation
+
+# vincular migration
 migrate = Migrate(app, db)
 
 # preparar extensão JWT

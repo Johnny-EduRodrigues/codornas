@@ -1,4 +1,4 @@
-from siraback.config import db
+from siraback.extensions import db
 from siraback.models.tenant import Tenant
 
 def create_tenant(data):
@@ -12,16 +12,13 @@ def create_tenant(data):
     Returns:
         Tenant: O objeto Tenant criado.
     """
-    # Cria uma instância do modelo Tenant com os dados fornecidos
-    new_tenant = Tenant(name=data['name'])
     
-    # Adiciona o novo tenant à sessão do banco de dados
-    db.session.add(new_tenant)
-    
-    # Comita a transação para salvar o novo tenant no banco de dados
+    # Cria instância do modelo e salva no banco
+    new = Tenant(name=data['name'])
+    db.session.add(new)
     db.session.commit()
     
-    return new_tenant
+    return new
 
 def get_tenants():
     """
