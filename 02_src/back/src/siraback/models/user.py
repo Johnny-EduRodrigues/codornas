@@ -18,11 +18,6 @@ class User(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(250))
     email: Mapped[str] = mapped_column(String(320))
-    auth_provider: Mapped[str] = mapped_column(
-        String(50),
-        default="local",
-        server_default="local",
-    )
     timestamp_email_verified: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -31,7 +26,7 @@ class User(db.Model):
         DateTime(timezone=True),
         server_default=func.now(),
     )
-    password: Mapped[str] = mapped_column(String(255))
+    password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     obs: Mapped[str | None] = mapped_column(Text, nullable=True)
     super_admin: Mapped[bool] = mapped_column(Boolean)
     active: Mapped[bool] = mapped_column(Boolean)
@@ -51,13 +46,16 @@ class User(db.Model):
         secondary=reservation_takers,
         back_populates="takers",
     )
+    authentication_identities: Mapped[list["AuthenticationIdentity"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def to_dict(self) -> dict[str, int | str | bool | None]:
         return {
             "id": self.id,
             "name": self.name,
             "email": self.email,
-            "auth_provider": self.auth_provider,
             "timestamp_email_verified": (
                 self.timestamp_email_verified.isoformat()
                 if self.timestamp_email_verified is not None

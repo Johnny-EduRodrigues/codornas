@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
 
+from siraback.api.authorization import super_admin_required
 from siraback.services.tenant import create_tenant, get_tenants
 
 tenant_bp = Blueprint("tenant", __name__, url_prefix="/tenants")
@@ -17,7 +17,7 @@ def list_tenants():
 
 
 @tenant_bp.post("")
-@jwt_required()
+@super_admin_required
 def add_tenant():
 
     # obtendo os dados

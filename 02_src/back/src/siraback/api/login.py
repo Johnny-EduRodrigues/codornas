@@ -1,4 +1,3 @@
-import secrets
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
@@ -8,7 +7,11 @@ from google.auth.exceptions import GoogleAuthError
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 
-from siraback.services import user as user_service
+from siraback.services import (
+    authentication_identity as authentication_identity_service,
+    login_provider as login_provider_service,
+    user as user_service,
+)
 
 login_bp = Blueprint("login", __name__)
 
@@ -76,24 +79,48 @@ def google_auth():
     ):
         return jsonify({"error": "Google account must have a verified email"}), 401
 
-    user = user_service.get_user_by_email(email)
+    provider = login_provider_service.get_login_provider_by_name("google")
+    if provider is None:
+        return jsonify({"error": "Google login provider is not configured"}), 503
+
+    identity = authentication_identity_service.get_authentication_identity(
+        provider.id,
+        google_id,
+    )
+    user = identity.user if identity is not None else None
     if user is None:
-        name = id_info.get("name")
-        if not isinstance(name, str) or not name.strip():
-            name = email.split("@", maxsplit=1)[0]
-        user = user_service.create_user({
-            "name": name.strip(),
-            "email": email,
-            "password": secrets.token_urlsafe(32),
-            "timestamp_email_verified": datetime.now(timezone.utc),
-            "auth_provider": "google",
-            "super_admin": False,
-            "active": True,
-        })
+        user = user_service.get_user_by_email(email)
+        if user is None:
+            name = id_info.get("name")
+            if not isinstance(name, str) or not name.strip():
+                name = email.split("@", maxsplit=1)[0]
+            user = user_service.create_user({
+                "name": name.strip(),
+                "email": email,
+                "password": None,
+                "timestamp_email_verified": datetime.now(timezone.utc),
+                "super_admin": False,
+                "active": True,
+            })
     elif not user.active:
         return jsonify({"error": "User account is inactive"}), 403
 
-    user_service.set_auth_provider(user, "google")
+    if not user.active:
+        return jsonify({"error": "User account is inactive"}), 403
+
+    user_service.mark_email_verified(user, datetime.now(timezone.utc))
+
+    if identity is None:
+        authentication_identity_service.create_authentication_identity({
+            "user_id": user.id,
+            "login_provider_id": provider.id,
+            "identificator_login": email,
+            "identificator_external": google_id,
+        })
+    elif identity.identificator_login != email:
+        identity.identificator_login = email
+        authentication_identity_service.update_authentication_identity(identity)
+
     session_token = create_access_token(identity=str(user.id))
     return jsonify({
         "message": "Authentication successful",
@@ -102,5 +129,6 @@ def google_auth():
             "email": user.email,
             "name": user.name,
             "picture": id_info.get("picture"),
+            "super_admin": user.super_admin,
         },
     }), 200

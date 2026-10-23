@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
-
+from siraback.api.authorization import super_admin_required
 from siraback.models.tenant import Tenant
 from siraback.services.group import create_group, get_groups
 
@@ -16,7 +15,7 @@ def list_groups():
 
 
 @group_bp.post("")
-@jwt_required()
+@super_admin_required
 def add_group():
     data = request.get_json()
     if not isinstance(data, dict):

@@ -1,39 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import Link from 'next/link';
-
-interface UserProfile {
-  email: string;
-  name: string;
-  picture: string;
-}
+import { clearSession, saveSession, useSession } from '../lib/session';
 
 export default function LoginPage() {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const { token, user } = useSession();
+  const [loginError, setLoginError] = useState<string | null>(null);
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
-  console.log('API Base URL:', apiBaseUrl);
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-
-    if (savedToken && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
-    }
-  }, []);
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
-    console.log('Google response:', {
-    hasCredential: !!credentialResponse.credential,
-    credentialLength: credentialResponse.credential?.length,
-  });
     try {
       const response = await fetch(`${apiBaseUrl}/api/auth/google`, {
         method: 'POST',
@@ -47,36 +25,22 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      console.log('Authentication API response:', {
-      status: response.status,
-      ok: response.ok,
-      data,
-    });
-    
       if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setUser(data.user);
+        saveSession(data.token, data.user);
       } else {
-        console.error('Authentication failed:', {
-    status: response.status,
-    statusText: response.statusText,
-    data,
-  });
+        setLoginError('Não foi possível autenticar com Google.');
       }
-    } catch (error) {
-      console.error('Network or server error:', error);
+    } catch {
+      setLoginError('Não foi possível conectar ao servidor.');
     }
   };
 
   const handleError = () => {
-    console.error('Google Sign-In failed');
+    setLoginError('O login com Google falhou. Tente novamente.');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+    clearSession();
   };
 
   return (
@@ -85,14 +49,14 @@ export default function LoginPage() {
         &larr; Voltar à Página Inicial
       </Link>
 
-      {user ? (
+      {token && user ? (
         <div style={{ textAlign: 'center' }}>
           <h1>Você está LOGADO!</h1>
-          <img
+          {user.picture && <img
             src={user.picture}
-            alt={user.name}
+            alt={user.name ?? ''}
             style={{ borderRadius: '50%', width: '80px', height: '80px' }}
-          />
+          />}
           <h2>Bem-vindo(a), {user.name}!</h2>
           <p>{user.email}</p>
 
@@ -114,10 +78,15 @@ export default function LoginPage() {
       ) : (
         <div style={{ textAlign: 'center' }}>
           <h2>Iniciar Sessão</h2>
-          <GoogleLogin
-            onSuccess={handleSuccess}
-            onError={handleError}
-          />
+          {loginError && <p role="alert">{loginError}</p>}
+          {clientId ? (
+            <GoogleLogin
+              onSuccess={handleSuccess}
+              onError={handleError}
+            />
+          ) : (
+            <p>Login com Google indisponível: configure NEXT_PUBLIC_GOOGLE_CLIENT_ID.</p>
+          )}
         </div>
       )}
     </div>

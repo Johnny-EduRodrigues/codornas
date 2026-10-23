@@ -108,6 +108,8 @@ from siraback.models.purpose import Purpose
 from siraback.models.group import Group
 from siraback.models.allowed_source import AllowedSource
 from siraback.models.reservation import Reservation
+from siraback.models.login_provider import LoginProvider
+from siraback.models.authentication_identity import AuthenticationIdentity
 
 # vincular migration
 migrate = Migrate(app, db)

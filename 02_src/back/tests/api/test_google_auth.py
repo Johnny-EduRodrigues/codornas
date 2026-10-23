@@ -25,6 +25,36 @@ class GoogleAuthApiTests(unittest.TestCase):
         )
         JWTManager(self.app)
         self.app.register_blueprint(login_bp)
+        provider_patch = patch(
+            "siraback.api.login.login_provider_service.get_login_provider_by_name",
+            return_value=SimpleNamespace(id=1),
+        )
+        identity_patch = patch(
+            "siraback.api.login.authentication_identity_service."
+            "get_authentication_identity",
+            return_value=None,
+        )
+        create_identity_patch = patch(
+            "siraback.api.login.authentication_identity_service."
+            "create_authentication_identity",
+        )
+        update_identity_patch = patch(
+            "siraback.api.login.authentication_identity_service."
+            "update_authentication_identity",
+        )
+        verify_email_patch = patch(
+            "siraback.api.login.user_service.mark_email_verified",
+        )
+        self.get_provider = provider_patch.start()
+        self.get_identity = identity_patch.start()
+        self.create_identity = create_identity_patch.start()
+        self.update_identity = update_identity_patch.start()
+        self.mark_email_verified = verify_email_patch.start()
+        self.addCleanup(provider_patch.stop)
+        self.addCleanup(identity_patch.stop)
+        self.addCleanup(create_identity_patch.stop)
+        self.addCleanup(update_identity_patch.stop)
+        self.addCleanup(verify_email_patch.stop)
 
         @self.app.get("/jwt-check")
         @jwt_required()
@@ -36,14 +66,12 @@ class GoogleAuthApiTests(unittest.TestCase):
     def post_google_auth(self, payload: object):
         return self.client.post("/api/auth/google", json=payload)
 
-    @patch("siraback.api.login.user_service.set_auth_provider")
     @patch("siraback.api.login.id_token.verify_oauth2_token")
     @patch("siraback.api.login.user_service.get_user_by_email")
     def test_google_auth_returns_flask_jwt_for_existing_user(
         self,
         get_user_by_email: Mock,
         verify_token: Mock,
-        set_auth_provider: Mock,
     ) -> None:
         verify_token.return_value = {
             "sub": "google-user-id",
@@ -56,6 +84,7 @@ class GoogleAuthApiTests(unittest.TestCase):
             id=42,
             email="user@example.test",
             active=True,
+            super_admin=False,
         )
         get_user_by_email.return_value.name = "Example User"
 
@@ -70,6 +99,7 @@ class GoogleAuthApiTests(unittest.TestCase):
                 "email": "user@example.test",
                 "name": "Example User",
                 "picture": "https://example.test/photo.png",
+                "super_admin": False,
             },
         )
         with self.app.app_context():
@@ -81,9 +111,13 @@ class GoogleAuthApiTests(unittest.TestCase):
         )
         self.assertEqual(protected_response.status_code, 200)
         self.assertEqual(protected_response.get_json(), {"identity": "42"})
-        set_auth_provider.assert_called_once_with(
-            get_user_by_email.return_value,
-            "google",
+        self.create_identity.assert_called_once_with(
+            {
+                "user_id": 42,
+                "login_provider_id": 1,
+                "identificator_login": "user@example.test",
+                "identificator_external": "google-user-id",
+            },
         )
         verify_token.assert_called_once()
         self.assertEqual(verify_token.call_args.args[0], "valid-google-token")
@@ -110,7 +144,7 @@ class GoogleAuthApiTests(unittest.TestCase):
             email="new-user@example.test",
             name="New User",
             active=True,
-            auth_provider="google",
+            super_admin=False,
         )
 
         response = self.post_google_auth({"credential": "valid-google-token"})
@@ -119,9 +153,7 @@ class GoogleAuthApiTests(unittest.TestCase):
         created_data = create_user.call_args.args[0]
         self.assertEqual(created_data["name"], "New User")
         self.assertEqual(created_data["email"], "new-user@example.test")
-        self.assertEqual(created_data["auth_provider"], "google")
-        self.assertTrue(created_data["password"])
-        self.assertNotEqual(created_data["password"], "valid-google-token")
+        self.assertIsNone(created_data["password"])
         self.assertIsInstance(created_data["timestamp_email_verified"], datetime)
         self.assertFalse(created_data["super_admin"])
         self.assertTrue(created_data["active"])
@@ -149,13 +181,47 @@ class GoogleAuthApiTests(unittest.TestCase):
             email="new-user@example.test",
             name="new-user",
             active=True,
-            auth_provider="google",
+            super_admin=False,
         )
 
         response = self.post_google_auth({"credential": "valid-google-token"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(create_user.call_args.args[0]["name"], "new-user")
+
+    @patch("siraback.api.login.user_service.get_user_by_email")
+    @patch("siraback.api.login.id_token.verify_oauth2_token")
+    def test_google_auth_uses_external_identity_for_existing_login(
+        self,
+        verify_token: Mock,
+        get_user_by_email: Mock,
+    ) -> None:
+        account = SimpleNamespace(
+            id=12,
+            email="updated@example.test",
+            name="Example User",
+            active=True,
+            super_admin=False,
+        )
+        identity = SimpleNamespace(
+            user=account,
+            identificator_login="old@example.test",
+        )
+        self.get_identity.return_value = identity
+        verify_token.return_value = {
+            "sub": "stable-google-id",
+            "email": "updated@example.test",
+            "email_verified": True,
+            "name": "Example User",
+        }
+
+        response = self.post_google_auth({"credential": "valid-google-token"})
+
+        self.assertEqual(response.status_code, 200)
+        get_user_by_email.assert_not_called()
+        self.create_identity.assert_not_called()
+        self.assertEqual(identity.identificator_login, "updated@example.test")
+        self.update_identity.assert_called_once_with(identity)
 
     def test_google_auth_rejects_non_object_body(self) -> None:
         response = self.post_google_auth(["not", "an", "object"])

@@ -7,7 +7,8 @@ Hylson Vescovi Netto
 Ricardo de la Rocha Ladeira
 
 3) email
-- email usado para acessar o sistema, tanto via login com google quanto via acesso com email e senha
+- email é usado para comunicação com o usuário, e usado para *identificar* um usuário no sistema de forma textual
+- pode também ser usado para acessar o sistema, no caso de login via email
 
 4) timestamp_email_verified
 - timestamp sobre quando o email foi confirmado pelo usuário
@@ -19,7 +20,8 @@ Ricardo de la Rocha Ladeira
 5) created_at
 
 6) password
-- senha cifrada
+- armazena a senha cifrada; é obrigatória no caso de ter sido feito login via email/local
+- pode ter valor nulo caso tenha sido feito login via provedor externo (ex: login via google)
 
 7) obs
 
@@ -34,12 +36,17 @@ Ricardo de la Rocha Ladeira
 
 10) active
 
-11) artifacts_admin
+11) authentication_identities
+- RELACIONAMENTO: lista de identidades de autenticacao que o usuário possui.
+- uma identidade de autenticacao é um meio de acesso via provedor externo
+- List[AuthenticationIdentity]
+
+12) artifacts_admin
 - lista reversa de artefatos os quais esse usuário é "admin", ou seja, pode criar, editar ou cancelar reservas
 - um artefato pode possuir muitos admin, e um usuário pode ser admin de muitos artefatos
 - List[Artifact]
   
-12) reservations_observer
+13) reservations_observer
 - lista reversa de reservas que o usuário está observando
 - se um usuário observa uma reserva, em caso de alteração ou cancelamento, o usuário será notificado (por exemplo, via email)
 - um usuário pode observar várias reservas, e uma reserva pode ser "observada" por vários usuários

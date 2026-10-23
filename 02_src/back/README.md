@@ -12,7 +12,9 @@ SECRET_KEY=zzz
 
 A chave `JWT_SECRET` deve ter pelo menos 32 bytes para HS256. O ID do cliente Google deverá ser obtido a partir do [Google Cloud](https://console.cloud.google.com).
 
-O campo `auth_provider` registra o método do último login bem-sucedido: `local` para senha ou `google` para Google.
+Logins por provedores externos são associados à conta por `AuthenticationIdentity`. Para o Google, o sistema usa o claim `sub` como identificador externo estável e o email verificado apenas para vincular uma conta existente na primeira autenticação. A senha local pode ser nula para contas que usam somente provedores externos; a migração registra o provedor Google.
+
+Na migração inicial de carga (`8c2f6a1d4e73`), o banco recebe o provedor `google` e uma conta superadmin padrão (`admin@admin.com`, senha inicial `admin`) caso ainda não existam. A senha é armazenada com hash bcrypt. Altere a senha padrão imediatamente após o primeiro login; a migração não redefine contas que já existam com esse email.
 
 
 ## Install dependencies

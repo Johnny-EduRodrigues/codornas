@@ -1,6 +1,8 @@
 import unittest
 from contextlib import ExitStack
 from datetime import date, time
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from flask import Flask
@@ -52,7 +54,6 @@ class OtherApiTests(unittest.TestCase):
             (group, "/groups", "get_groups"),
             (purpose, "/purposes", "get_purposes"),
             (reservation, "/reservations", "get_reservations"),
-            (user, "/users", "get_users"),
         )
 
         for module, path, service_name in cases:
@@ -136,24 +137,6 @@ class OtherApiTests(unittest.TestCase):
                 {"description": "Research", "tenant_id": 1},
             ),
             (
-                user,
-                "/users",
-                "create_user",
-                {
-                    "name": " Researcher ",
-                    "email": " researcher@example.test ",
-                    "password": "secret",
-                },
-                {
-                    "name": "Researcher",
-                    "email": "researcher@example.test",
-                    "password": "secret",
-                    "super_admin": False,
-                    "active": True,
-                    "obs": None,
-                },
-            ),
-            (
                 reservation,
                 "/reservations",
                 "create_reservation",
@@ -192,9 +175,15 @@ class OtherApiTests(unittest.TestCase):
                     group: ("Tenant",),
                     purpose: ("Tenant",),
                     reservation: ("User", "Artifact", "Purpose"),
-                    user: (),
                 }[module]
                 with ExitStack() as stack:
+                    if path in {"/artifacts", "/categories", "/groups"}:
+                        stack.enter_context(
+                            patch(
+                                "siraback.api.authorization.is_active_super_admin",
+                                return_value=True,
+                            ),
+                        )
                     for dependency in dependencies:
                         mocked_model = stack.enter_context(
                             patch.object(module, dependency),
@@ -236,15 +225,350 @@ class OtherApiTests(unittest.TestCase):
             ("/groups", {}),
             ("/purposes", {}),
             ("/reservations", {}),
-            ("/users", {}),
         )
         for path, body in paths_and_bodies:
             with self.subTest(path=path):
                 response = self.client.post(path, json=body)
                 self.assertEqual(response.status_code, 401)
 
+    def test_catalog_routes_are_public_and_writes_require_superadmin(self) -> None:
+        for path, module, service_name in (
+            ("/categories", category, "get_categories"),
+            ("/groups", group, "get_groups"),
+            ("/artifacts", artifact, "get_artifacts"),
+        ):
+            with self.subTest(path=path):
+                with patch.object(module, service_name, return_value=[]):
+                    response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+
+                with patch(
+                    "siraback.api.authorization.is_active_super_admin",
+                    return_value=False,
+                ):
+                    response = self.client.post(
+                        path,
+                        json={},
+                        headers=self.authorization_headers(),
+                    )
+                self.assertEqual(response.status_code, 403)
+
+    def test_artifact_category_list_is_public(self) -> None:
+        association = {
+            "artifact_id": 3,
+            "artifact_name": "Sala C16",
+            "category_id": 4,
+            "category_name": "Salas",
+        }
+        with patch(
+            "siraback.api.artifact.get_artifact_categories",
+            return_value=[association],
+        ) as get_associations:
+            response = self.client.get("/artifacts/categories")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {"myresult": "ok", "mydetails": [association]},
+        )
+        get_associations.assert_called_once_with()
+
+    def test_superadmin_can_associate_artifact_and_category(self) -> None:
+        artifact_model = Mock(tenant_id=1, categories=[])
+        artifact_model.id = 3
+        artifact_model.name = "Sala C16"
+        category_model = Mock(tenant_id=1)
+        category_model.id = 4
+        category_model.name = "Salas"
+        with (
+            patch(
+                "siraback.api.authorization.is_active_super_admin",
+                return_value=True,
+            ),
+            patch.object(artifact, "Artifact") as artifact_query,
+            patch.object(artifact, "Category") as category_query,
+            patch(
+                "siraback.api.artifact.associate_artifact_category",
+                return_value={
+                    "artifact_id": 3,
+                    "artifact_name": "Sala C16",
+                    "category_id": 4,
+                    "category_name": "Salas",
+                },
+            ) as associate,
+        ):
+            artifact_query.query.filter_by.return_value.first.return_value = (
+                artifact_model
+            )
+            category_query.query.filter_by.return_value.first.return_value = (
+                category_model
+            )
+            response = self.client.post(
+                "/artifacts/categories",
+                json={"artifact_id": 3, "category_id": 4},
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 201)
+        associate.assert_called_once_with(artifact_model, category_model)
+
+    def test_artifact_category_insert_requires_login_and_superadmin(self) -> None:
+        response = self.client.post(
+            "/artifacts/categories",
+            json={"artifact_id": 3, "category_id": 4},
+        )
+        self.assertEqual(response.status_code, 401)
+
+        with patch(
+            "siraback.api.authorization.is_active_super_admin",
+            return_value=False,
+        ):
+            response = self.client.post(
+                "/artifacts/categories",
+                json={"artifact_id": 3, "category_id": 4},
+                headers=self.authorization_headers(),
+            )
+        self.assertEqual(response.status_code, 403)
+
+    def test_regular_user_list_is_limited_to_public_fields(self) -> None:
+        regular_user = SimpleNamespace(super_admin=False, active=True, tenants=[])
+        listed_user = SimpleNamespace(
+            name="Researcher",
+            tenants=[SimpleNamespace(name="Physics")],
+            created_at=datetime(2026, 10, 23, 12, 0, tzinfo=timezone.utc),
+        )
+        with (
+            patch("siraback.api.user.get_active_user", return_value=regular_user),
+            patch("siraback.api.user.user_service.get_users", return_value=[listed_user]),
+        ):
+            response = self.client.get(
+                "/users",
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertEqual(body["view"], "public")
+        self.assertEqual(
+            body["mydetails"],
+            [{
+                "name": "Researcher",
+                "tenants": ["Physics"],
+                "created_at": "2026-10-23T12:00:00+00:00",
+            }],
+        )
+
+    def test_superadmin_lists_only_users_in_their_tenants(self) -> None:
+        tenant = SimpleNamespace(id=8, to_dict=lambda: {"id": 8, "name": "Physics"})
+        admin = SimpleNamespace(
+            super_admin=True,
+            active=True,
+            tenants=[tenant],
+        )
+        listed_user = SimpleNamespace(id=5)
+        with (
+            patch("siraback.api.user.get_active_user", return_value=admin),
+            patch(
+                "siraback.api.user.user_service.get_users_in_tenants",
+                return_value=[listed_user],
+            ) as get_users,
+            patch(
+                "siraback.api.user.user_service.serialize_admin_user",
+                return_value={"id": 5, "email": "user@example.test"},
+            ),
+        ):
+            response = self.client.get(
+                "/users",
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["view"], "admin")
+        self.assertEqual(response.get_json()["mydetails"], [{
+            "id": 5,
+            "email": "user@example.test",
+        }])
+        get_users.assert_called_once_with([8])
+
+    def test_user_insert_requires_superadmin_and_limits_tenant_membership(self) -> None:
+        response = self.client.post(
+            "/users",
+            json={
+                "name": "Researcher",
+                "email": "researcher@example.test",
+                "password": "secret",
+                "tenant_ids": [8],
+            },
+        )
+        self.assertEqual(response.status_code, 401)
+
+        admin = SimpleNamespace(
+            id=1,
+            active=True,
+            super_admin=True,
+            tenants=[SimpleNamespace(id=8)],
+        )
+        with (
+            patch("siraback.api.authorization.is_active_super_admin", return_value=True),
+            patch("siraback.api.user.get_active_user", return_value=admin),
+            patch("siraback.api.user.Tenant") as tenant_model,
+            patch("siraback.api.user.user_service.get_user_by_email", return_value=None),
+            patch("siraback.api.user.user_service.create_user") as create_user,
+        ):
+            tenant_model.query.filter.return_value.all.return_value = [
+                SimpleNamespace(id=8),
+            ]
+            create_user.return_value = SimpleNamespace()
+            with patch(
+                "siraback.api.user.user_service.serialize_admin_user",
+                return_value={"name": "Researcher"},
+            ):
+                response = self.client.post(
+                    "/users",
+                    json={
+                        "name": " Researcher ",
+                        "email": " researcher@example.test ",
+                        "password": "secret",
+                        "tenant_ids": [8],
+                    },
+                    headers=self.authorization_headers(),
+                )
+
+        self.assertEqual(response.status_code, 201)
+        create_user.assert_called_once()
+        self.assertEqual(create_user.call_args.args[0]["tenants"][0].id, 8)
+        self.assertFalse(create_user.call_args.args[0]["super_admin"])
+
+        with (
+            patch("siraback.api.authorization.is_active_super_admin", return_value=True),
+            patch("siraback.api.user.get_active_user", return_value=admin),
+        ):
+            response = self.client.post(
+                "/users",
+                json={
+                    "name": "Out of scope",
+                    "email": "other@example.test",
+                    "password": "secret",
+                    "tenant_ids": [9],
+                },
+                headers=self.authorization_headers(),
+            )
+        self.assertEqual(response.status_code, 403)
+
+    def test_user_tenant_list_requires_authentication(self) -> None:
+        response = self.client.get("/users/tenants")
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_authenticated_user_can_list_users_and_tenant_memberships(self) -> None:
+        regular_user = SimpleNamespace(active=True, super_admin=False, tenants=[])
+        listed_user = SimpleNamespace(
+            id=3,
+            name="Researcher",
+            tenants=[SimpleNamespace(id=8, name="Physics", to_dict=lambda: {
+                "id": 8,
+                "name": "Physics",
+            })],
+        )
+        with (
+            patch("siraback.api.user.get_active_user", return_value=regular_user),
+            patch(
+                "siraback.api.user.user_service.get_users",
+                return_value=[listed_user],
+            ),
+        ):
+            response = self.client.get(
+                "/users/tenants",
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {
+            "myresult": "ok",
+            "mydetails": [{
+                "user_id": 3,
+                "name": "Researcher",
+                "tenants": [{"id": 8, "name": "Physics"}],
+            }],
+            "manageable_tenants": [],
+            "view": "public",
+        })
+
+    def test_superadmin_can_assign_user_to_owned_tenant(self) -> None:
+        tenant = SimpleNamespace(id=8, to_dict=lambda: {"id": 8, "name": "Physics"})
+        admin = SimpleNamespace(
+            active=True,
+            super_admin=True,
+            tenants=[tenant],
+        )
+        target_user = SimpleNamespace(
+            id=3,
+            name="Researcher",
+            tenants=[],
+        )
+        with (
+            patch(
+                "siraback.api.authorization.is_active_super_admin",
+                return_value=True,
+            ),
+            patch("siraback.api.user.get_active_user", return_value=admin),
+            patch(
+                "siraback.api.user.user_service.get_user_by_id",
+                return_value=target_user,
+            ),
+            patch("siraback.api.user.Tenant") as tenant_model,
+            patch(
+                "siraback.api.user.user_service.assign_user_to_tenant",
+            ) as assign,
+        ):
+            tenant_model.query.filter_by.return_value.first.return_value = tenant
+            response = self.client.post(
+                "/users/tenants",
+                json={"user_id": 3, "tenant_id": 8},
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.get_json()["mydetails"], {
+            "user_id": 3,
+            "name": "Researcher",
+            "tenant": {"id": 8, "name": "Physics"},
+        })
+        assign.assert_called_once_with(target_user, tenant)
+
+    def test_superadmin_cannot_assign_user_to_unowned_tenant(self) -> None:
+        admin = SimpleNamespace(
+            active=True,
+            super_admin=True,
+            tenants=[SimpleNamespace(id=8)],
+        )
+        with (
+            patch(
+                "siraback.api.authorization.is_active_super_admin",
+                return_value=True,
+            ),
+            patch("siraback.api.user.get_active_user", return_value=admin),
+            patch(
+                "siraback.api.user.user_service.get_user_by_id",
+            ) as get_user,
+        ):
+            response = self.client.post(
+                "/users/tenants",
+                json={"user_id": 3, "tenant_id": 9},
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 403)
+        get_user.assert_not_called()
+
     def test_category_rejects_invalid_tenant_id(self) -> None:
-        with patch.object(category, "create_category") as create:
+        with (
+            patch(
+                "siraback.api.authorization.is_active_super_admin",
+                return_value=True,
+            ),
+            patch.object(category, "create_category") as create,
+        ):
             response = self.client.post(
                 "/categories",
                 json={"name": "Optics", "tenant_id": True},

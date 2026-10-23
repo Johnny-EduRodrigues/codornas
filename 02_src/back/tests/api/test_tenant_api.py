@@ -47,10 +47,12 @@ class TenantApiTests(unittest.TestCase):
         get_tenants.assert_called_once_with()
         tenant.to_dict.assert_called_once_with()
 
+    @patch("siraback.api.authorization.is_active_super_admin", return_value=True)
     @patch("siraback.api.tenant.create_tenant")
     def test_post_tenant_creates_tenant(
         self,
         create_tenant: Mock,
+        _is_super_admin: Mock,
     ) -> None:
         tenant = Mock()
         tenant.to_dict.return_value = {"id": 2, "name": "Campus"}
@@ -77,7 +79,24 @@ class TenantApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 401)
 
-    def test_post_tenant_rejects_non_object_body(self) -> None:
+    @patch("siraback.api.authorization.is_active_super_admin", return_value=False)
+    def test_post_tenant_requires_superadmin(
+        self,
+        _is_super_admin: Mock,
+    ) -> None:
+        response = self.client.post(
+            "/tenants",
+            json={"name": "Campus"},
+            headers=self.authorization_headers(),
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    @patch("siraback.api.authorization.is_active_super_admin", return_value=True)
+    def test_post_tenant_rejects_non_object_body(
+        self,
+        _is_super_admin: Mock,
+    ) -> None:
         response = self.client.post(
             "/tenants",
             json=["Campus"],
@@ -93,7 +112,8 @@ class TenantApiTests(unittest.TestCase):
             },
         )
 
-    def test_post_tenant_rejects_empty_name(self) -> None:
+    @patch("siraback.api.authorization.is_active_super_admin", return_value=True)
+    def test_post_tenant_rejects_empty_name(self, _is_super_admin: Mock) -> None:
         response = self.client.post(
             "/tenants",
             json={"name": "   "},
@@ -109,7 +129,8 @@ class TenantApiTests(unittest.TestCase):
             },
         )
 
-    def test_post_tenant_rejects_non_string_name(self) -> None:
+    @patch("siraback.api.authorization.is_active_super_admin", return_value=True)
+    def test_post_tenant_rejects_non_string_name(self, _is_super_admin: Mock) -> None:
         response = self.client.post(
             "/tenants",
             json={"name": 123},

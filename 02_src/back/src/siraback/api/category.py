@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
-
+from siraback.api.authorization import super_admin_required
 from siraback.models.tenant import Tenant
 from siraback.services.category import create_category, get_categories
 
@@ -21,7 +20,7 @@ def list_categories():
 
 
 @category_bp.post("")
-@jwt_required()
+@super_admin_required
 def add_category():
 
     # obtendo os dados

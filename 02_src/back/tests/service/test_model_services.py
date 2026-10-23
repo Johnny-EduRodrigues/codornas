@@ -1,4 +1,6 @@
 import unittest
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from siraback.services import (
@@ -13,6 +15,66 @@ from siraback.services import (
 
 
 class ModelServiceTests(unittest.TestCase):
+    def test_user_serializers_separate_public_and_admin_details(self) -> None:
+        accessible_tenant = SimpleNamespace(
+            id=2,
+            name="Physics",
+            to_dict=lambda: {"id": 2, "name": "Physics"},
+        )
+        hidden_tenant = SimpleNamespace(
+            id=7,
+            name="Chemistry",
+            to_dict=lambda: {"id": 7, "name": "Chemistry"},
+        )
+        identity = SimpleNamespace(
+            login_provider=SimpleNamespace(name="google"),
+            identificator_login="user@example.test",
+            identificator_external="google-sub",
+        )
+        account = SimpleNamespace(
+            name="Researcher",
+            email="user@example.test",
+            timestamp_email_verified=None,
+            created_at=datetime(2026, 10, 23, tzinfo=timezone.utc),
+            obs=None,
+            super_admin=False,
+            active=True,
+            tenants=[accessible_tenant, hidden_tenant],
+            authentication_identities=[identity],
+            to_dict=lambda: {
+                "id": 4,
+                "name": "Researcher",
+                "email": "user@example.test",
+                "timestamp_email_verified": None,
+                "created_at": "2026-10-23T00:00:00+00:00",
+                "obs": None,
+                "super_admin": False,
+                "active": True,
+            },
+        )
+
+        public = user.serialize_public_user(account)
+        admin = user.serialize_admin_user(account, {2})
+
+        self.assertEqual(
+            public,
+            {
+                "name": "Researcher",
+                "tenants": ["Physics", "Chemistry"],
+                "created_at": "2026-10-23T00:00:00+00:00",
+            },
+        )
+        self.assertNotIn("email", public)
+        self.assertEqual(admin["tenants"], [{"id": 2, "name": "Physics"}])
+        self.assertEqual(
+            admin["authentication_identities"],
+            [{
+                "provider": "google",
+                "identificator_login": "user@example.test",
+                "identificator_external": "google-sub",
+            }],
+        )
+
     def test_create_and_get_services(self) -> None:
         services = (
             (
@@ -123,7 +185,6 @@ class ModelServiceTests(unittest.TestCase):
         user_model.assert_called_once_with(
             name="Researcher",
             email="researcher@example.test",
-            auth_provider="local",
             active=True,
             super_admin=False,
             password="hashed-password",
@@ -131,6 +192,38 @@ class ModelServiceTests(unittest.TestCase):
         add.assert_called_once_with(new_user)
         commit.assert_called_once_with()
         self.assertIs(result, new_user)
+
+    @patch("siraback.services.user.db.session.commit")
+    @patch("siraback.services.user.db.session.add")
+    @patch("siraback.services.user.User")
+    @patch("siraback.services.user.bcrypt.hashpw")
+    def test_create_user_allows_missing_password(
+        self,
+        hashpw: Mock,
+        user_model: Mock,
+        add: Mock,
+        commit: Mock,
+    ) -> None:
+        data = {
+            "name": "External User",
+            "email": "external@example.test",
+            "password": None,
+            "active": True,
+            "super_admin": False,
+        }
+
+        user.create_user(data)
+
+        hashpw.assert_not_called()
+        user_model.assert_called_once_with(
+            name="External User",
+            email="external@example.test",
+            active=True,
+            super_admin=False,
+            password=None,
+        )
+        add.assert_called_once_with(user_model.return_value)
+        commit.assert_called_once_with()
 
     @patch("siraback.services.user.User")
     def test_get_users_returns_all_users(self, user_model: Mock) -> None:
@@ -157,39 +250,13 @@ class ModelServiceTests(unittest.TestCase):
         )
         self.assertIs(result, expected)
 
-    @patch("siraback.services.user.db.session.commit")
-    def test_set_auth_provider_persists_changed_provider(
-        self,
-        commit: Mock,
-    ) -> None:
-        account = Mock(auth_provider="local")
-
-        user.set_auth_provider(account, "google")
-
-        self.assertEqual(account.auth_provider, "google")
-        commit.assert_called_once_with()
-
-    @patch("siraback.services.user.db.session.commit")
-    def test_set_auth_provider_does_not_commit_when_unchanged(
-        self,
-        commit: Mock,
-    ) -> None:
-        account = Mock(auth_provider="google")
-
-        user.set_auth_provider(account, "google")
-
-        self.assertEqual(account.auth_provider, "google")
-        commit.assert_not_called()
-
     @patch("siraback.services.user.create_access_token", return_value="access-token")
-    @patch("siraback.services.user.set_auth_provider")
     @patch("siraback.services.user.bcrypt.checkpw", return_value=True)
     @patch("siraback.services.user.User")
     def test_gerar_token_returns_token_for_valid_password(
         self,
         user_model: Mock,
         checkpw: Mock,
-        set_auth_provider: Mock,
         create_access_token: Mock,
     ) -> None:
         user_model.query.filter_by.return_value.first.return_value = Mock(
@@ -201,10 +268,6 @@ class ModelServiceTests(unittest.TestCase):
 
         user_model.query.filter_by.assert_called_once_with(email="user@example.test")
         checkpw.assert_called_once_with(b"password", b"stored-hash")
-        set_auth_provider.assert_called_once_with(
-            user_model.query.filter_by.return_value.first.return_value,
-            "local",
-        )
         create_access_token.assert_called_once_with(identity="7")
         self.assertEqual(result, "access-token")
 
@@ -239,6 +302,26 @@ class ModelServiceTests(unittest.TestCase):
         user_model.query.filter_by.return_value.first.return_value = None
 
         result = user.gerar_token("missing@example.test", "password")
+
+        checkpw.assert_not_called()
+        create_access_token.assert_not_called()
+        self.assertIsNone(result)
+
+    @patch("siraback.services.user.create_access_token")
+    @patch("siraback.services.user.bcrypt.checkpw")
+    @patch("siraback.services.user.User")
+    def test_gerar_token_rejects_user_without_local_password(
+        self,
+        user_model: Mock,
+        checkpw: Mock,
+        create_access_token: Mock,
+    ) -> None:
+        user_model.query.filter_by.return_value.first.return_value = Mock(
+            id=8,
+            password=None,
+        )
+
+        result = user.gerar_token("external@example.test", "password")
 
         checkpw.assert_not_called()
         create_access_token.assert_not_called()
