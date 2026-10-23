@@ -17,3 +17,11 @@ class Purpose(db.Model):
     )
     tenant_id: Mapped[int] = mapped_column(ForeignKey("sb_tenant.id"))
     tenant: Mapped["Tenant"] = relationship()
+
+    def to_dict(self) -> dict[str, int | str]:
+        return {
+            "id": self.id,
+            "description": self.description,
+            "created_at": self.created_at.isoformat(),
+            "tenant_id": self.tenant_id,
+        }

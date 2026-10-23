@@ -23,3 +23,11 @@ class Category(db.Model):
         secondary=artifact_categories,
         back_populates="categories",
     )
+
+    def to_dict(self) -> dict[str, int | str]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "tenant_id": self.tenant_id,
+            "created_at": self.created_at.isoformat(),
+        }

@@ -21,3 +21,15 @@ class Group(db.Model):
     color: Mapped[str | None] = mapped_column(String(250), nullable=True)
     tenant_id: Mapped[int] = mapped_column(ForeignKey("sb_tenant.id"))
     tenant: Mapped["Tenant"] = relationship()
+
+    def to_dict(self) -> dict[str, int | str | bool | None]:
+        return {
+            "id": self.id,
+            "acronym": self.acronym,
+            "name": self.name,
+            "active": self.active,
+            "obs": self.obs,
+            "created_at": self.created_at.isoformat(),
+            "color": self.color,
+            "tenant_id": self.tenant_id,
+        }

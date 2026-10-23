@@ -46,3 +46,19 @@ class User(db.Model):
         secondary=reservation_takers,
         back_populates="takers",
     )
+
+    def to_dict(self) -> dict[str, int | str | bool | None]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "timestamp_email_verified": (
+                self.timestamp_email_verified.isoformat()
+                if self.timestamp_email_verified is not None
+                else None
+            ),
+            "created_at": self.created_at.isoformat(),
+            "obs": self.obs,
+            "super_admin": self.super_admin,
+            "active": self.active,
+        }

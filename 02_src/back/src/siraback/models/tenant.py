@@ -15,3 +15,11 @@ class Tenant(db.Model):
         secondary=user_tenants,
         back_populates="tenants",
     )
+
+    # objeto em formato de dicionário,
+    # para ser usado na camada de API
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }

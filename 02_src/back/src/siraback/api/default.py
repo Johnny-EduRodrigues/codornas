@@ -4,4 +4,6 @@ default_bp = Blueprint("default", __name__)
 
 @default_bp.get("/")
 def index():
-    return "Backend operante :-)"
+    # resposta padrão para a rota raiz
+    return {"myresult":"ok", 
+            "mydetails":"Backend operante :-)"}

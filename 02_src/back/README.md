@@ -8,6 +8,23 @@ From this directory (`02_src/back`), sync the project dependencies:
 uv sync
 ```
 
+## Run tests
+
+The tests use Python's built-in `unittest` framework. Inside the "back" directory, run:
+
+```bash
+uv run --project . --directory src python -m unittest discover -s ../tests -p 'test_*.py' -v
+```
+
+`uv` is not required to run the tests, but it is the recommended option here
+because it runs them with the project's declared dependencies. If those
+dependencies are already installed in your active Python environment, you can
+run the tests from the backend directory with:
+
+```bash
+PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
 ## Run database migrations
 
 Run Flask from `src` so Python can find the `siraback` package without

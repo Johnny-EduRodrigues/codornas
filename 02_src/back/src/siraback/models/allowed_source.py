@@ -13,3 +13,12 @@ class AllowedSource(db.Model):
     type: Mapped[str] = mapped_column(String(20))
     tenant_id: Mapped[int] = mapped_column(ForeignKey("sb_tenant.id"))
     tenant: Mapped["Tenant"] = relationship()
+
+    def to_dict(self) -> dict[str, int | str]:
+        return {
+            "id": self.id,
+            "description": self.description,
+            "filter_or_email_allowed": self.filter_or_email_allowed,
+            "type": self.type,
+            "tenant_id": self.tenant_id,
+        }

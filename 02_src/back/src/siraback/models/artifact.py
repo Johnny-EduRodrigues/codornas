@@ -28,3 +28,13 @@ class Artifact(db.Model):
         secondary=artifact_admins,
         back_populates="artifacts_admin",
     )
+
+    def to_dict(self) -> dict[str, int | str | bool]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "created_at": self.created_at.isoformat(),
+            "tenant_id": self.tenant_id,
+            "restrict": self.restrict,
+            "active": self.active,
+        }

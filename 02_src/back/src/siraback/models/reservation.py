@@ -80,3 +80,22 @@ class Reservation(db.Model):
         secondary=reservation_observers,
         back_populates="reservations_observer",
     )
+
+    def to_dict(self) -> dict[str, int | str | bool | None]:
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "artifact_id": self.artifact_id,
+            "date": self.date.isoformat(),
+            "start_time": self.start_time.isoformat(),
+            "end_time": self.end_time.isoformat(),
+            "purpose_id": self.purpose_id,
+            "active": self.active,
+            "batch_id": str(self.batch_id) if self.batch_id is not None else None,
+            "obs": self.obs,
+            "created_at": self.created_at.isoformat(),
+            "canceled_by_user_id": self.canceled_by_user_id,
+            "cancellation_reason": self.cancellation_reason,
+            "previous_reservation_id": self.previous_reservation_id,
+            "group_id": self.group_id,
+        }

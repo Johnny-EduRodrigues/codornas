@@ -13,8 +13,12 @@ def create_tenant(data):
         Tenant: O objeto Tenant criado.
     """
     
+    name = data["name"]
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("Tenant name must be a non-empty string")
+
     # Cria instância do modelo e salva no banco
-    new = Tenant(name=data['name'])
+    new = Tenant(name=name)
     db.session.add(new)
     db.session.commit()
     
