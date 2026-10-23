@@ -12,6 +12,9 @@ Ricardo de la Rocha Ladeira
 4) timestamp_email_verified
 - timestamp sobre quando o email foi confirmado pelo usuário
 - o usuário só pode iniciar a marcação de reservas após confirmar o email
+- o valor padrão desse campo deve ser NULL
+- se for realizado login via google, esse campo poderá ser preenchido com o momento da criação do usuário
+- para login via email comum, esse campo só será preenchido na confirmação via email
 
 5) created_at
 
