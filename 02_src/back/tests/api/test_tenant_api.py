@@ -31,7 +31,7 @@ class TenantApiTests(unittest.TestCase):
         get_tenants: Mock,
     ) -> None:
         tenant = Mock()
-        tenant.to_dict.return_value = {"id": 1, "name": "Research"}
+        tenant.to_dict.return_value = {"id": 1, "name": "IFC Campus Blumenau"}
         get_tenants.return_value = [tenant]
 
         response = self.client.get("/tenants")
@@ -41,7 +41,7 @@ class TenantApiTests(unittest.TestCase):
             response.get_json(),
             {
                 "myresult": "ok",
-                "mydetails": [{"id": 1, "name": "Research"}],
+                "mydetails": [{"id": 1, "name": "IFC Campus Blumenau"}],
             },
         )
         get_tenants.assert_called_once_with()
