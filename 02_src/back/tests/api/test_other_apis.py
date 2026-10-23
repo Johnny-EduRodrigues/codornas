@@ -494,6 +494,45 @@ class OtherApiTests(unittest.TestCase):
             "view": "public",
         })
 
+    def test_superadmin_gets_all_tenants_for_assignment(self) -> None:
+        first_tenant = SimpleNamespace(
+            id=8,
+            name="Physics",
+            to_dict=lambda: {"id": 8, "name": "Physics"},
+        )
+        other_tenant = SimpleNamespace(
+            id=9,
+            name="Chemistry",
+            to_dict=lambda: {"id": 9, "name": "Chemistry"},
+        )
+        admin = SimpleNamespace(
+            active=True,
+            super_admin=True,
+            tenants=[first_tenant],
+        )
+        with (
+            patch("siraback.api.user.get_active_user", return_value=admin),
+            patch("siraback.api.user.user_service.get_users", return_value=[]),
+            patch("siraback.api.user.Tenant") as tenant_model,
+        ):
+            tenant_model.query.order_by.return_value.all.return_value = [
+                first_tenant,
+                other_tenant,
+            ]
+            response = self.client.get(
+                "/users/tenants",
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json()["manageable_tenants"],
+            [
+                {"id": 8, "name": "Physics"},
+                {"id": 9, "name": "Chemistry"},
+            ],
+        )
+
     def test_superadmin_can_assign_user_to_owned_tenant(self) -> None:
         tenant = SimpleNamespace(id=8, to_dict=lambda: {"id": 8, "name": "Physics"})
         admin = SimpleNamespace(
@@ -536,7 +575,11 @@ class OtherApiTests(unittest.TestCase):
         })
         assign.assert_called_once_with(target_user, tenant)
 
-    def test_superadmin_cannot_assign_user_to_unowned_tenant(self) -> None:
+    def test_superadmin_can_assign_user_to_any_existing_tenant(self) -> None:
+        tenant = SimpleNamespace(
+            id=9,
+            to_dict=lambda: {"id": 9, "name": "Chemistry"},
+        )
         admin = SimpleNamespace(
             active=True,
             super_admin=True,
@@ -550,16 +593,23 @@ class OtherApiTests(unittest.TestCase):
             patch("siraback.api.user.get_active_user", return_value=admin),
             patch(
                 "siraback.api.user.user_service.get_user_by_id",
+                return_value=SimpleNamespace(id=3, name="Researcher", tenants=[]),
             ) as get_user,
+            patch("siraback.api.user.Tenant") as tenant_model,
+            patch(
+                "siraback.api.user.user_service.assign_user_to_tenant",
+            ) as assign,
         ):
+            tenant_model.query.filter_by.return_value.first.return_value = tenant
             response = self.client.post(
                 "/users/tenants",
                 json={"user_id": 3, "tenant_id": 9},
                 headers=self.authorization_headers(),
             )
 
-        self.assertEqual(response.status_code, 403)
-        get_user.assert_not_called()
+        self.assertEqual(response.status_code, 201)
+        get_user.assert_called_once_with(3)
+        assign.assert_called_once_with(get_user.return_value, tenant)
 
     def test_category_rejects_invalid_tenant_id(self) -> None:
         with (

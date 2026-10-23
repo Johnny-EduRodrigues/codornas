@@ -160,7 +160,7 @@ export default function UserTenantsPage() {
         <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-700">Administração</p>
         <h1 className="text-3xl font-bold tracking-tight">Usuários e organizações</h1>
         <p className="mt-2 text-zinc-600">
-          Consulte a quais organizações os usuários pertencem. Superadmins podem criar novos vínculos nas suas organizações.
+          Consulte a quais organizações os usuários pertencem. Superadmins podem associá-los a qualquer organização cadastrada.
         </p>
       </header>
 
@@ -223,7 +223,7 @@ export default function UserTenantsPage() {
               </button>
               {manageableTenants.length === 0 && (
                 <p className="mt-2 text-sm text-zinc-600">
-                  Seu usuário não pertence a nenhuma organização que possa administrar.
+                  Não há organizações cadastradas para associar.
                 </p>
               )}
             </div>

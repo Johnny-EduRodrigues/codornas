@@ -169,7 +169,7 @@ def list_user_tenants():
         ],
         "manageable_tenants": [
             tenant.to_dict()
-            for tenant in current_user.tenants
+            for tenant in Tenant.query.order_by(Tenant.name).all()
         ] if current_user.super_admin else [],
         "view": "admin" if current_user.super_admin else "public",
     })
@@ -203,13 +203,6 @@ def assign_user_tenant():
         return jsonify({
             "myresult": "error",
             "mydetails": "An active superadmin account is required",
-        }), 403
-
-    manageable_tenant_ids = {tenant.id for tenant in current_user.tenants}
-    if tenant_id not in manageable_tenant_ids:
-        return jsonify({
-            "myresult": "error",
-            "mydetails": "You can only assign users to your organizations",
         }), 403
 
     target_user = user_service.get_user_by_id(user_id)
