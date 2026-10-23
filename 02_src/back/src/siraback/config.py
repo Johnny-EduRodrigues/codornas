@@ -1,9 +1,15 @@
 # bibliotecas flask
+import datetime
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from flask_migrate import Migrate
+
+from dotenv import load_dotenv
+from pathlib import Path
+
 
 # biblioteca para cifrar a senha
 import bcrypt
@@ -17,12 +23,33 @@ import os
 # Inicialização e configuração do aplicativo Flask
 app = Flask(__name__)
 
+
+
+# Load the backend-root .env regardless of the current working directory.
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(BACKEND_DIR / ".env")
+
+def utc_now():
+    """Return the current UTC datetime with timezone information."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+JWT_SECRET = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not GOOGLE_CLIENT_ID or not JWT_SECRET:
+    raise RuntimeError(
+        "GOOGLE_CLIENT_ID and JWT_SECRET (or JWT_SECRET_KEY) must be "
+        "configured in the backend .env file"
+    )
+
 # A chave secreta é usada para proteger 
 # sessões e formulários (CSRF - Cross-Site Request Forgery)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
 # configurar JWT
-app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
+app.config['JWT_SECRET_KEY'] = JWT_SECRET
+app.config["GOOGLE_CLIENT_ID"] = GOOGLE_CLIENT_ID
 
 # desligar notificações de notificações em objetos
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -56,7 +83,15 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + arquivobd
 
 # aplicar CORS
-CORS(app)
+CORS(
+    app,
+    origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    supports_credentials=True,
+)
+
 
 # importação do SQLAlchemy
 from siraback.extensions import db

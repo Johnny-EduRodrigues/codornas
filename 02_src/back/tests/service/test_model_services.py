@@ -141,6 +141,21 @@ class ModelServiceTests(unittest.TestCase):
         user_model.query.all.assert_called_once_with()
         self.assertEqual(result, expected)
 
+    @patch("siraback.services.user.User")
+    def test_get_user_by_email_returns_matching_user(
+        self,
+        user_model: Mock,
+    ) -> None:
+        expected = Mock()
+        user_model.query.filter_by.return_value.first.return_value = expected
+
+        result = user.get_user_by_email("user@example.test")
+
+        user_model.query.filter_by.assert_called_once_with(
+            email="user@example.test",
+        )
+        self.assertIs(result, expected)
+
     @patch("siraback.services.user.create_access_token", return_value="access-token")
     @patch("siraback.services.user.bcrypt.checkpw", return_value=True)
     @patch("siraback.services.user.User")

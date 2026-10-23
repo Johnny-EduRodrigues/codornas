@@ -19,6 +19,10 @@ def get_users():
     return User.query.all()
 
 
+def get_user_by_email(email):
+    return User.query.filter_by(email=email).first()
+
+
 def gerar_token(email, password):
     user = User.query.filter_by(email=email).first()
     if user:

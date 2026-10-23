@@ -1,5 +1,20 @@
 # SIRA Backend
 
+# .env file
+
+Create an .env with:
+
+```
+GOOGLE_CLIENT_ID=yyy
+JWT_SECRET=xxx
+SECRET_KEY=zzz
+```
+
+Get ID do cliente Google deverá ser obtido a partir do [Google Cloud](https://console.cloud.google.com).
+
+A frase secreta JWT pode ser uma frase qualquer; sugere-se que seja uma frase longa e não trivial.
+
+
 ## Install dependencies
 
 From this directory (`02_src/back`), sync the project dependencies:
@@ -31,9 +46,9 @@ Run Flask from `src` so Python can find the `siraback` package without
 setting `PYTHONPATH`:
 
 ```bash
-uv run --project . --directory src flask --app siraback.config:app db init
-uv run --project . --directory src flask --app siraback.config:app db migrate -m "001 main database tables"
-uv run --project . --directory src flask --app siraback.config:app db upgrade
+uv run --project . --directory src python -m flask --app siraback.app:app db init
+uv run --project . --directory src python -m flask --app siraback.app:app db migrate -m "001 main database tables"
+uv run --project . --directory src python -m flask --app siraback.app:app db upgrade
 ```
 
 `db init` is a one-time setup. For later schema changes, run `db migrate` with
@@ -47,8 +62,8 @@ Example workflow when adding a new model Category:
 ```bash
 # add or edit a model in src/siraback/models/
 # make sure it is imported in src/siraback/config.py
-uv run --project . --directory src flask --app siraback.config:app db migrate -m "002 adding the Category model/table and relationships"
-uv run --project . --directory src flask --app siraback.config:app db upgrade
+uv run --project . --directory src python -m flask --app siraback.app:app db migrate -m "002 adding the Category model/table and relationships"
+uv run --project . --directory src python -m flask --app siraback.app:app db upgrade
 ```
 
 This creates a new revision script under `src/migrations/versions/` that
@@ -57,8 +72,12 @@ before upgrading if you need to adjust anything manually.
 
 ## Run the app
 
+Set `GOOGLE_CLIENT_ID` and `JWT_SECRET` in `.env` at the backend root before
+starting the app. `JWT_SECRET_KEY` is also accepted as an alternative. From
+the `back` directory, run:
+
 ```bash
-uv run --project . --directory src flask --app siraback.config:app run --debug
+uv run --project . --directory src python -m flask --app siraback.app:app run --debug
 ```
 
 By default, the app uses SQLite and stores the database at

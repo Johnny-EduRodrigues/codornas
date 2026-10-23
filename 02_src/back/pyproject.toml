@@ -11,5 +11,8 @@ dependencies = [
     "flask-jwt-extended>=4.7.4",
     "flask-migrate>=4.1.0",
     "flask-sqlalchemy>=3.1.1",
+    "google-auth>=2.62.0",
+    "google-auth-oauthlib>=1.5.0",
+    "python-dotenv>=1.2.4",
     "sqlalchemy>=2.1.4",
 ]
