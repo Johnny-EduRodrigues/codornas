@@ -36,12 +36,14 @@ class GoogleAuthApiTests(unittest.TestCase):
     def post_google_auth(self, payload: object):
         return self.client.post("/api/auth/google", json=payload)
 
+    @patch("siraback.api.login.user_service.set_auth_provider")
     @patch("siraback.api.login.id_token.verify_oauth2_token")
     @patch("siraback.api.login.user_service.get_user_by_email")
     def test_google_auth_returns_flask_jwt_for_existing_user(
         self,
         get_user_by_email: Mock,
         verify_token: Mock,
+        set_auth_provider: Mock,
     ) -> None:
         verify_token.return_value = {
             "sub": "google-user-id",
@@ -79,6 +81,10 @@ class GoogleAuthApiTests(unittest.TestCase):
         )
         self.assertEqual(protected_response.status_code, 200)
         self.assertEqual(protected_response.get_json(), {"identity": "42"})
+        set_auth_provider.assert_called_once_with(
+            get_user_by_email.return_value,
+            "google",
+        )
         verify_token.assert_called_once()
         self.assertEqual(verify_token.call_args.args[0], "valid-google-token")
         self.assertEqual(verify_token.call_args.args[2], "google-client-id")
@@ -104,6 +110,7 @@ class GoogleAuthApiTests(unittest.TestCase):
             email="new-user@example.test",
             name="New User",
             active=True,
+            auth_provider="google",
         )
 
         response = self.post_google_auth({"credential": "valid-google-token"})
@@ -112,6 +119,7 @@ class GoogleAuthApiTests(unittest.TestCase):
         created_data = create_user.call_args.args[0]
         self.assertEqual(created_data["name"], "New User")
         self.assertEqual(created_data["email"], "new-user@example.test")
+        self.assertEqual(created_data["auth_provider"], "google")
         self.assertTrue(created_data["password"])
         self.assertNotEqual(created_data["password"], "valid-google-token")
         self.assertIsInstance(created_data["timestamp_email_verified"], datetime)
@@ -141,6 +149,7 @@ class GoogleAuthApiTests(unittest.TestCase):
             email="new-user@example.test",
             name="new-user",
             active=True,
+            auth_provider="google",
         )
 
         response = self.post_google_auth({"credential": "valid-google-token"})

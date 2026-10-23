@@ -123,6 +123,7 @@ class ModelServiceTests(unittest.TestCase):
         user_model.assert_called_once_with(
             name="Researcher",
             email="researcher@example.test",
+            auth_provider="local",
             active=True,
             super_admin=False,
             password="hashed-password",
@@ -156,13 +157,39 @@ class ModelServiceTests(unittest.TestCase):
         )
         self.assertIs(result, expected)
 
+    @patch("siraback.services.user.db.session.commit")
+    def test_set_auth_provider_persists_changed_provider(
+        self,
+        commit: Mock,
+    ) -> None:
+        account = Mock(auth_provider="local")
+
+        user.set_auth_provider(account, "google")
+
+        self.assertEqual(account.auth_provider, "google")
+        commit.assert_called_once_with()
+
+    @patch("siraback.services.user.db.session.commit")
+    def test_set_auth_provider_does_not_commit_when_unchanged(
+        self,
+        commit: Mock,
+    ) -> None:
+        account = Mock(auth_provider="google")
+
+        user.set_auth_provider(account, "google")
+
+        self.assertEqual(account.auth_provider, "google")
+        commit.assert_not_called()
+
     @patch("siraback.services.user.create_access_token", return_value="access-token")
+    @patch("siraback.services.user.set_auth_provider")
     @patch("siraback.services.user.bcrypt.checkpw", return_value=True)
     @patch("siraback.services.user.User")
     def test_gerar_token_returns_token_for_valid_password(
         self,
         user_model: Mock,
         checkpw: Mock,
+        set_auth_provider: Mock,
         create_access_token: Mock,
     ) -> None:
         user_model.query.filter_by.return_value.first.return_value = Mock(
@@ -174,6 +201,10 @@ class ModelServiceTests(unittest.TestCase):
 
         user_model.query.filter_by.assert_called_once_with(email="user@example.test")
         checkpw.assert_called_once_with(b"password", b"stored-hash")
+        set_auth_provider.assert_called_once_with(
+            user_model.query.filter_by.return_value.first.return_value,
+            "local",
+        )
         create_access_token.assert_called_once_with(identity="7")
         self.assertEqual(result, "access-token")
 

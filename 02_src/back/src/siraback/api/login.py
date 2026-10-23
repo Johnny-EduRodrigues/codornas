@@ -86,12 +86,14 @@ def google_auth():
             "email": email,
             "password": secrets.token_urlsafe(32),
             "timestamp_email_verified": datetime.now(timezone.utc),
+            "auth_provider": "google",
             "super_admin": False,
             "active": True,
         })
     elif not user.active:
         return jsonify({"error": "User account is inactive"}), 403
 
+    user_service.set_auth_provider(user, "google")
     session_token = create_access_token(identity=str(user.id))
     return jsonify({
         "message": "Authentication successful",

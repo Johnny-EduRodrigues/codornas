@@ -18,6 +18,11 @@ class User(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(250))
     email: Mapped[str] = mapped_column(String(320))
+    auth_provider: Mapped[str] = mapped_column(
+        String(50),
+        default="local",
+        server_default="local",
+    )
     timestamp_email_verified: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -52,6 +57,7 @@ class User(db.Model):
             "id": self.id,
             "name": self.name,
             "email": self.email,
+            "auth_provider": self.auth_provider,
             "timestamp_email_verified": (
                 self.timestamp_email_verified.isoformat()
                 if self.timestamp_email_verified is not None
