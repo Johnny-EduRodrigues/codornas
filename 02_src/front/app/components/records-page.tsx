@@ -82,6 +82,7 @@ export function RecordsPage({ config }: { config: RecordPageConfig }) {
   );
 
   const isSuperAdmin = Boolean(token && user?.super_admin === true);
+  const requiresTenant = config.fields.some((field) => field.kind === 'tenant');
 
   async function loadData() {
     setLoading(true);
@@ -261,12 +262,12 @@ export function RecordsPage({ config }: { config: RecordPageConfig }) {
             <div className="sm:col-span-2">
               <button
                 className="rounded-lg bg-blue-700 px-5 py-2.5 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={saving || tenants.length === 0}
+                disabled={saving || (requiresTenant && tenants.length === 0)}
                 type="submit"
               >
                 {saving ? 'Salvando…' : 'Salvar'}
               </button>
-              {tenants.length === 0 && (
+              {requiresTenant && tenants.length === 0 && (
                 <p className="mt-2 text-sm text-zinc-600">Cadastre uma organização antes de inserir este registro.</p>
               )}
             </div>
