@@ -9,6 +9,7 @@ GOOGLE_CLIENT_ID=yyy
 JWT_SECRET=xxx
 SECRET_KEY=zzz
 GOOGLE_SIGNUP_SUPER_ADMIN=false
+POSTGRES_URL_NON_POOLING=kkk (if postgres connection desired)
 ```
 
 A chave `JWT_SECRET` deve ter pelo menos 32 bytes para HS256. O ID do cliente Google deverá ser obtido a partir do [Google Cloud](https://console.cloud.google.com).
