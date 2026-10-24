@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useSession } from '../lib/session';
 
@@ -178,16 +177,6 @@ export default function UsersPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-10 sm:px-8">
-      <nav className="mb-8 flex flex-wrap items-center gap-3 text-sm">
-        <Link className="font-medium text-blue-700 hover:underline" href="/">Início</Link>
-        <Link className="text-blue-700 hover:underline" href="/categories">Categorias</Link>
-        <Link className="text-blue-700 hover:underline" href="/groups">Grupos</Link>
-        <Link className="text-blue-700 hover:underline" href="/artifacts">Artefatos</Link>
-        <Link className="text-blue-700 hover:underline" href="/artifact-categories">Categorias dos artefatos</Link>
-        <Link className="text-blue-700 hover:underline" href="/user-tenants">Usuários e organizações</Link>
-        {!token && <Link className="ml-auto text-blue-700 hover:underline" href="/login">Entrar</Link>}
-      </nav>
-
       <header className="mb-8">
         <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-700">Administração</p>
         <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>

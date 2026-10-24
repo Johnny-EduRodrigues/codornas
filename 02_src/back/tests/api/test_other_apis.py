@@ -141,7 +141,7 @@ class OtherApiTests(unittest.TestCase):
                 "/reservations",
                 "create_reservation",
                 {
-                    "user_id": 1,
+                    "user_id": 999,
                     "artifact_id": 2,
                     "purpose_id": 3,
                     "date": "2026-10-23",
@@ -194,6 +194,13 @@ class OtherApiTests(unittest.TestCase):
                     create = stack.enter_context(
                         patch.object(module, service_name),
                     )
+                    if module is reservation:
+                        stack.enter_context(
+                            patch(
+                                "siraback.api.reservation.get_active_user",
+                                return_value=SimpleNamespace(id=1),
+                            ),
+                        )
                     created_model = create.return_value
                     created_model.to_dict.return_value = {
                         "id": 10,
@@ -230,6 +237,50 @@ class OtherApiTests(unittest.TestCase):
             with self.subTest(path=path):
                 response = self.client.post(path, json=body)
                 self.assertEqual(response.status_code, 401)
+
+    def test_reservation_list_is_public(self) -> None:
+        model = Mock()
+        model.to_dict.return_value = {"id": 1}
+        with patch.object(
+            reservation,
+            "get_reservations",
+            return_value=[model],
+        ) as get_reservations:
+            response = self.client.get("/reservations")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {"myresult": "ok", "mydetails": [{"id": 1}]},
+        )
+        get_reservations.assert_called_once_with()
+
+    def test_reservation_rejects_end_time_before_start_time(self) -> None:
+        with (
+            patch(
+                "siraback.api.reservation.get_active_user",
+                return_value=SimpleNamespace(id=1),
+            ),
+            patch.object(reservation, "create_reservation") as create,
+        ):
+            response = self.client.post(
+                "/reservations",
+                json={
+                    "artifact_id": 1,
+                    "purpose_id": 1,
+                    "date": "2026-10-24",
+                    "start_time": "11:00",
+                    "end_time": "10:00",
+                },
+                headers=self.authorization_headers(),
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.get_json()["mydetails"],
+            "'end_time' must be later than 'start_time'",
+        )
+        create.assert_not_called()
 
     def test_catalog_routes_are_public_and_writes_require_superadmin(self) -> None:
         for path, module, service_name in (
@@ -633,7 +684,13 @@ class OtherApiTests(unittest.TestCase):
         create.assert_not_called()
 
     def test_reservation_rejects_invalid_date(self) -> None:
-        with patch.object(reservation, "create_reservation") as create:
+        with (
+            patch(
+                "siraback.api.reservation.get_active_user",
+                return_value=SimpleNamespace(id=1),
+            ),
+            patch.object(reservation, "create_reservation") as create,
+        ):
             response = self.client.post(
                 "/reservations",
                 json={

@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import Link from 'next/link';
-import { clearSession, saveSession, useSession } from '../lib/session';
+import { saveSession, useSession } from '../lib/session';
 
 export default function LoginPage() {
   const { token, user } = useSession();
@@ -39,16 +38,8 @@ export default function LoginPage() {
     setLoginError('O login com Google falhou. Tente novamente.');
   };
 
-  const handleLogout = () => {
-    clearSession();
-  };
-
   return (
     <div style={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>
-      <Link href="/" style={{ position: 'absolute', top: '20px', left: '20px', textDecoration: 'none', color: '#1a202c' }}>
-        &larr; Voltar à Página Inicial
-      </Link>
-
       {token && user ? (
         <div style={{ textAlign: 'center' }}>
           <h1>Você está LOGADO!</h1>
@@ -60,20 +51,6 @@ export default function LoginPage() {
           <h2>Bem-vindo(a), {user.name}!</h2>
           <p>{user.email}</p>
 
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#e53e3e',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginTop: '12px'
-            }}
-          >
-            Terminar Sessão
-          </button>
         </div>
       ) : (
         <div style={{ textAlign: 'center' }}>

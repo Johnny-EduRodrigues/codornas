@@ -2,8 +2,9 @@ from datetime import date, time
 from uuid import UUID
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from siraback.api.authorization import get_active_user
 from siraback.models.artifact import Artifact
 from siraback.models.group import Group
 from siraback.models.purpose import Purpose
@@ -15,7 +16,6 @@ reservation_bp = Blueprint("reservation", __name__, url_prefix="/reservations")
 
 
 @reservation_bp.get("")
-@jwt_required()
 def list_reservations():
     return jsonify({
         "myresult": "ok",
@@ -28,6 +28,13 @@ def list_reservations():
 @reservation_bp.post("")
 @jwt_required()
 def add_reservation():
+    current_user = get_active_user(get_jwt_identity())
+    if current_user is None:
+        return jsonify({
+            "myresult": "error",
+            "mydetails": "An active user account is required",
+        }), 403
+
     data = request.get_json()
     if not isinstance(data, dict):
         return jsonify({
@@ -35,17 +42,12 @@ def add_reservation():
             "mydetails": "Request body must be a JSON object",
         }), 400
 
-    user_id = data.get("user_id")
+    user_id = current_user.id
     artifact_id = data.get("artifact_id")
     purpose_id = data.get("purpose_id")
     date_value = data.get("date")
     start_time_value = data.get("start_time")
     end_time_value = data.get("end_time")
-    if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id < 1:
-        return jsonify({
-            "myresult": "error",
-            "mydetails": "'user_id' must be a positive integer",
-        }), 400
     if not isinstance(artifact_id, int) or isinstance(artifact_id, bool) or artifact_id < 1:
         return jsonify({
             "myresult": "error",
@@ -92,12 +94,12 @@ def add_reservation():
             "myresult": "error",
             "mydetails": "'end_time' must be an ISO time string",
         }), 400
-
-    if User.query.filter_by(id=user_id).first() is None:
+    if end_time <= start_time:
         return jsonify({
             "myresult": "error",
-            "mydetails": "'user_id' does not identify an existing user",
+            "mydetails": "'end_time' must be later than 'start_time'",
         }), 400
+
     if Artifact.query.filter_by(id=artifact_id).first() is None:
         return jsonify({
             "myresult": "error",
