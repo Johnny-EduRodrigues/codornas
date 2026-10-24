@@ -24,6 +24,7 @@ Curso Superior de Licenciatura em Pedagogia
 
 7) color
 - cor ou padrão de preenchimento ou imagem de fundo a ser utilizado na representação visual das reservas que pertençam ao grupo
+- armazenado em modo texto, formato hexadecimal, string tamanho 7
 
 9) tenant_id
 
