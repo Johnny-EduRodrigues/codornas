@@ -32,8 +32,8 @@ def upgrade():
     sa.Column('name', sa.String(length=250), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.Column('restrict', sa.Boolean(), server_default=sa.text('0'), nullable=False),
-    sa.Column('active', sa.Boolean(), server_default=sa.text('1'), nullable=False),
+    sa.Column('restrict', sa.Boolean(), server_default=sa.false(), nullable=False),
+    sa.Column('active', sa.Boolean(), server_default=sa.true(), nullable=False),
     sa.ForeignKeyConstraint(['tenant_id'], ['sb_tenant.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -49,7 +49,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('acronym', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=250), nullable=False),
-    sa.Column('active', sa.Boolean(), server_default=sa.text('1'), nullable=False),
+    sa.Column('active', sa.Boolean(), server_default=sa.true(), nullable=False),
     sa.Column('obs', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('color', sa.String(length=250), nullable=True),
@@ -94,7 +94,7 @@ def upgrade():
     sa.Column('start_time', sa.Time(), nullable=False),
     sa.Column('end_time', sa.Time(), nullable=False),
     sa.Column('purpose_id', sa.Integer(), nullable=False),
-    sa.Column('active', sa.Boolean(), server_default=sa.text('1'), nullable=False),
+    sa.Column('active', sa.Boolean(), server_default=sa.true(), nullable=False),
     sa.Column('batch_id', sa.Uuid(), nullable=True),
     sa.Column('obs', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
