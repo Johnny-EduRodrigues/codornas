@@ -72,6 +72,15 @@ This creates a new revision script under `src/migrations/versions/` that
 contains the SQL needed for the schema change. Review the generated migration
 before upgrading if you need to adjust anything manually.
 
+## Run migration in remote postgres (ex: supabase)
+
+Change the environment variable to point to the Postgres remote server.
+For example:
+
+POSTGRES_URL_NON_POOLING="postgres://user:password@host:post/database?sslmode=require"
+
+Then run the db upgrade command as showed in the previous section.
+
 ## Run the app
 
 Set `GOOGLE_CLIENT_ID` and `JWT_SECRET` in `.env` at the backend root before
