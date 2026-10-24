@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from siraback.services.tenant import create_tenant, get_tenants
+from siraback.services.tenant import create_tenant, get_first_tenant, get_tenants
 
 
 class TenantServiceTests(unittest.TestCase):
@@ -57,6 +57,19 @@ class TenantServiceTests(unittest.TestCase):
 
         tenant_model.query.all.assert_called_once_with()
         self.assertIs(result, tenants)
+
+    @patch("siraback.services.tenant.Tenant")
+    def test_get_first_tenant_returns_lowest_id_tenant(
+        self,
+        tenant_model: Mock,
+    ) -> None:
+        tenant = Mock()
+        tenant_model.query.order_by.return_value.first.return_value = tenant
+
+        result = get_first_tenant()
+
+        tenant_model.query.order_by.assert_called_once_with(tenant_model.id)
+        self.assertIs(result, tenant)
 
 
 if __name__ == "__main__":

@@ -50,6 +50,10 @@ app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 # configurar JWT
 app.config['JWT_SECRET_KEY'] = JWT_SECRET
 app.config["GOOGLE_CLIENT_ID"] = GOOGLE_CLIENT_ID
+app.config["GOOGLE_SIGNUP_SUPER_ADMIN"] = (
+    os.getenv("GOOGLE_SIGNUP_SUPER_ADMIN", "").strip().lower()
+    in {"1", "true", "yes", "on"}
+)
 
 # desligar notificações de notificações em objetos
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

@@ -10,6 +10,7 @@ from google.oauth2 import id_token
 from siraback.services import (
     authentication_identity as authentication_identity_service,
     login_provider as login_provider_service,
+    tenant as tenant_service,
     user as user_service,
 )
 
@@ -94,13 +95,17 @@ def google_auth():
             name = id_info.get("name")
             if not isinstance(name, str) or not name.strip():
                 name = email.split("@", maxsplit=1)[0]
+            first_tenant = tenant_service.get_first_tenant()
             user = user_service.create_user({
                 "name": name.strip(),
                 "email": email,
                 "password": None,
                 "timestamp_email_verified": datetime.now(timezone.utc),
-                "super_admin": False,
+                "super_admin": bool(
+                    current_app.config.get("GOOGLE_SIGNUP_SUPER_ADMIN", False)
+                ),
                 "active": True,
+                "tenants": [first_tenant] if first_tenant is not None else [],
             })
     elif not user.active:
         return jsonify({"error": "User account is inactive"}), 403

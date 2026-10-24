@@ -22,6 +22,7 @@ class GoogleAuthApiTests(unittest.TestCase):
             TESTING=True,
             JWT_SECRET_KEY="test-secret-key-for-unit-tests-only-32-bytes",
             GOOGLE_CLIENT_ID="google-client-id",
+            GOOGLE_SIGNUP_SUPER_ADMIN=False,
         )
         JWTManager(self.app)
         self.app.register_blueprint(login_bp)
@@ -45,16 +46,22 @@ class GoogleAuthApiTests(unittest.TestCase):
         verify_email_patch = patch(
             "siraback.api.login.user_service.mark_email_verified",
         )
+        first_tenant_patch = patch(
+            "siraback.api.login.tenant_service.get_first_tenant",
+            return_value=None,
+        )
         self.get_provider = provider_patch.start()
         self.get_identity = identity_patch.start()
         self.create_identity = create_identity_patch.start()
         self.update_identity = update_identity_patch.start()
         self.mark_email_verified = verify_email_patch.start()
+        self.get_first_tenant = first_tenant_patch.start()
         self.addCleanup(provider_patch.stop)
         self.addCleanup(identity_patch.stop)
         self.addCleanup(create_identity_patch.stop)
         self.addCleanup(update_identity_patch.stop)
         self.addCleanup(verify_email_patch.stop)
+        self.addCleanup(first_tenant_patch.stop)
 
         @self.app.get("/jwt-check")
         @jwt_required()
@@ -123,6 +130,7 @@ class GoogleAuthApiTests(unittest.TestCase):
         self.assertEqual(verify_token.call_args.args[0], "valid-google-token")
         self.assertEqual(verify_token.call_args.args[2], "google-client-id")
         get_user_by_email.assert_called_once_with("user@example.test")
+        self.get_first_tenant.assert_not_called()
 
     @patch("siraback.api.login.user_service.create_user")
     @patch("siraback.api.login.user_service.get_user_by_email", return_value=None)
@@ -139,6 +147,9 @@ class GoogleAuthApiTests(unittest.TestCase):
             "email_verified": True,
             "name": " New User ",
         }
+        self.app.config["GOOGLE_SIGNUP_SUPER_ADMIN"] = True
+        first_tenant = SimpleNamespace(id=1, name="First tenant")
+        self.get_first_tenant.return_value = first_tenant
         create_user.return_value = SimpleNamespace(
             id=7,
             email="new-user@example.test",
@@ -155,8 +166,10 @@ class GoogleAuthApiTests(unittest.TestCase):
         self.assertEqual(created_data["email"], "new-user@example.test")
         self.assertIsNone(created_data["password"])
         self.assertIsInstance(created_data["timestamp_email_verified"], datetime)
-        self.assertFalse(created_data["super_admin"])
+        self.assertTrue(created_data["super_admin"])
         self.assertTrue(created_data["active"])
+        self.assertEqual(created_data["tenants"], [first_tenant])
+        self.get_first_tenant.assert_called_once_with()
         with self.app.app_context():
             claims = decode_token(response.get_json()["token"])
         self.assertEqual(claims["sub"], "7")
@@ -188,6 +201,9 @@ class GoogleAuthApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(create_user.call_args.args[0]["name"], "new-user")
+        self.assertFalse(create_user.call_args.args[0]["super_admin"])
+        self.assertEqual(create_user.call_args.args[0]["tenants"], [])
+        self.get_first_tenant.assert_called_once_with()
 
     @patch("siraback.api.login.user_service.get_user_by_email")
     @patch("siraback.api.login.id_token.verify_oauth2_token")

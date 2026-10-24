@@ -8,9 +8,15 @@ Create an .env with:
 GOOGLE_CLIENT_ID=yyy
 JWT_SECRET=xxx
 SECRET_KEY=zzz
+GOOGLE_SIGNUP_SUPER_ADMIN=false
 ```
 
 A chave `JWT_SECRET` deve ter pelo menos 32 bytes para HS256. O ID do cliente Google deverá ser obtido a partir do [Google Cloud](https://console.cloud.google.com).
+
+Set `GOOGLE_SIGNUP_SUPER_ADMIN=true` only in a controlled test environment to
+create newly registered Google users as superadmins. It defaults to `false`;
+enabling it in a publicly accessible environment gives every new Google
+registrant administrative privileges.
 
 Logins por provedores externos são associados à conta por `AuthenticationIdentity`. Para o Google, o sistema usa o claim `sub` como identificador externo estável e o email verificado apenas para vincular uma conta existente na primeira autenticação. A senha local pode ser nula para contas que usam somente provedores externos; a migração registra o provedor Google.
 

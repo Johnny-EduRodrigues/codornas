@@ -32,3 +32,7 @@ def get_tenants():
         list: Uma lista de objetos Tenant.
     """
     return Tenant.query.all()
+
+
+def get_first_tenant():
+    return Tenant.query.order_by(Tenant.id).first()
