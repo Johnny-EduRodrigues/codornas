@@ -12,9 +12,11 @@ Mobília
 
 3) tenant_id
 
-4) created_at
+4) tenant
 
-5) artifacts
+5) created_at
+
+6) artifacts
 - lista de Artifact
 - contém os artefatos que estão associados a esta categoria
 - um artefato está vinculado a uma ou mais categorias
