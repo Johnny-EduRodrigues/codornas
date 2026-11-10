@@ -102,3 +102,119 @@ By default, the app uses SQLite and stores the database at
 `src/siraback/database/reservation.db`. To use PostgreSQL, set
 `POSTGRES_URL_NON_POOLING` to the database connection URL before running the
 migrations or app.
+
+## Codorna farm management API
+
+The additional `codornas_api` application is isolated in `src/codornas_api`.
+It does not register routes, models, or configuration on `siraback`, so the
+existing application, migrations, database, and authentication remain
+unchanged. This API has no authentication and enables CORS; deploy it only
+where unauthenticated access is appropriate.
+
+### Configuration and start
+
+Copy `.env.example` to `.env`. For a local PostgreSQL instance, install Docker
+Desktop, then start the database service from this directory:
+
+```bash
+docker compose up -d
+```
+
+The service persists database files in the `postgres_data` volume and exposes
+PostgreSQL on port `5432`. The example `.env` connects to this local database.
+For deployment, replace `POSTGRES_URL_NON_POOLING` with your provider's
+direct/non-pooling PostgreSQL URL. The SQLAlchemy URL is normalized
+to `postgresql+psycopg://`, including both `postgres://` and `postgresql://`
+inputs, and uses psycopg v3. If the variable is omitted, the additional API
+uses the local `codornas.db` SQLite file. No database is created implicitly;
+call `POST /criar-tabelas` or create the schema with `Base.metadata`.
+
+Run the app from this directory:
+
+```bash
+uv sync
+uv run --project . --directory src flask --app codornas_api.app:app run --debug
+```
+
+With the local PostgreSQL service running, the API is available at
+`http://127.0.0.1:5000`. Create the application tables by sending
+`POST http://127.0.0.1:5000/criar-tabelas`.
+
+By default Flask serves at `http://127.0.0.1:5000`. `uv.lock` records the
+resolved dependencies, including the psycopg v3 binary distribution.
+
+### Resources and relationships
+
+All resources have integer `id` primary keys and JSON column serialization.
+Foreign keys validate referenced records; deleting owned detail records also
+cascades where appropriate. Nullable historical references use `SET NULL`,
+while referenced master data is restricted from unsafe deletion.
+
+| Route | Model and principal fields |
+| --- | --- |
+| `/codornas` | `codigo`, `sexo`, `data_nascimento`, `peso_atual`, `status`, `raca_id`, `lote_id`, `gaiola_id` |
+| `/racas` | `nome`, `descricao`, `origem`, `peso_medio` |
+| `/lotes` | `codigo`, `data_criacao`, `quantidade_inicial`, `status`, `raca_id`, `galpao_id` |
+| `/galpoes` | `nome`, `localizacao`, `capacidade` |
+| `/gaiolas` | `codigo`, `capacidade`, `galpao_id`, `lote_id` |
+| `/alimentos` | `nome`, `tipo`, `unidade`, `proteina_percentual`, `ativo` |
+| `/estoque-alimentos` | `alimento_id`, `quantidade`, `quantidade_minima`, `atualizado_em` |
+| `/alimentacoes` | `data_hora`, `quantidade`, `unidade`, `alimento_id`, `codorna_id` ou `lote_id` |
+| `/fornecedores` | `nome`, `documento`, `email`, `telefone`, `endereco` |
+| `/veterinarios` | `nome`, `registro_profissional`, `telefone`, `email` |
+| `/consultas-veterinarias` | `data_consulta`, `diagnostico`, `tratamento`, `custo`, `codorna_id`, `veterinario_id` |
+| `/vacinas` | `nome`, `descricao`, `dose`, `intervalo_dias` |
+| `/vacinacoes` | `data_aplicacao`, `proxima_aplicacao`, `codorna_id`, `vacina_id`, `veterinario_id` |
+| `/reproducoes` | `data_acasalamento`, `status`, `observacoes`, `macho_id`, `femea_id` |
+| `/incubacoes` | `data_inicio`, `data_prevista_eclosao`, `quantidade_ovos`, `temperatura`, `umidade`, `status`, `reproducao_id` |
+| `/producao-ovos` | `data_producao`, `quantidade`, `quantidade_quebrados`, `lote_id`, `gaiola_id` |
+| `/vendas` | `data_venda`, `valor_total`, `status`, `cliente_id` |
+| `/itens-venda` | `venda_id`, `descricao`, `quantidade`, `valor_unitario`, `codorna_id` |
+| `/clientes` | `nome`, `documento`, `email`, `telefone`, `endereco` |
+| `/despesas` | `data_despesa`, `descricao`, `categoria`, `valor`, `fornecedor_id` |
+| `/compras` | `data_compra`, `valor_total`, `status`, `fornecedor_id` |
+| `/itens-compra` | `compra_id`, `descricao`, `quantidade`, `custo_unitario`, `alimento_id` |
+| `/mortalidades` | `data_morte`, `quantidade`, `causa`, `codorna_id` ou `lote_id` |
+| `/pesagens` | `data_pesagem`, `peso`, `observacoes`, `codorna_id` |
+| `/ecloses` | `data_eclosao`, `quantidade_nascidos`, `quantidade_nao_eclodidos`, `incubacao_id` |
+
+### CRUD, resposta e validação
+
+Each collection supports `GET` (list, with optional `limit` up to 200 and
+`offset`) and `POST`; each `/{id}` supports `GET`, `PUT`, `PATCH`, and
+`DELETE`. For example:
+
+```bash
+curl -X POST http://127.0.0.1:5000/racas \
+  -H "Content-Type: application/json" \
+  -d "{\"nome\":\"Japonesa\",\"origem\":\"Japão\"}"
+```
+
+Responses always use `{"resultado": ..., "detalhes": "..."}`. Validation errors
+return 400, missing records 404, unique/integrity conflicts 409, successful
+creation 201, and successful reads/updates/deletes 200. Required fields,
+unknown fields, date/numeric formats, positive measures, duplicate unique
+values, and foreign-key references are checked. Alimentations and mortalities
+must identify a bird or a lot, and a reproduction cannot use the same bird as
+both parents.
+
+`POST /criar-tabelas` creates any missing tables and returns their count. It
+does not drop or migrate existing tables; use versioned migrations for future
+schema evolution.
+
+### Vercel
+
+The separate deployment entry is `api/index.py`, configured by `vercel.json`.
+Configure `POSTGRES_URL_NON_POOLING` in the Vercel project environment and
+deploy with `02_src/back` as the project root. This entry serves the
+unauthenticated codorna API; the existing `siraback` entry remains intact in
+`pyproject.toml`.
+
+### Tests
+
+The codorna API tests use an in-memory SQLite database and need no PostgreSQL
+service:
+
+```bash
+uv run --project . --directory src python -m unittest discover -s ../tests -p 'test_codornas_api.py' -v
+```
